@@ -80,7 +80,7 @@ source_rules:
 
 model_strategy:
   preselection_and_structured_extraction: GPT-5.6 Luna
-  final_digest_and_multi_item_synthesis: GPT-5.6 Terra
+  final_digest_and_multi_item_synthesis: GPT-5.6 Sol
   strategic_synthesis_or_creative_quality_control: GPT-5.6 Sol
   video_analysis_note: "Modelle nicht so behandeln, als könnten sie Videostreams direkt ansehen; bei echter Videoanalyse mit Transkript, Metadaten und ausgewählten Frames arbeiten."
   api_key_architecture_required_for_v1: false
