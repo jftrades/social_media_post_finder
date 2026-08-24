@@ -11,7 +11,7 @@ Sammelt aktuelle öffentliche Signale von TikTok, Instagram Reels und YouTube Sh
 
 Der erste Projektstand konzentriert sich auf Research, Trends, Hooks, Formate und direkt verlinkbare Quellen. 
 
-Die Skill-Datei unter `.agents/skills/social-media-research/SKILL.md` steuert die Befehle `trends`, `topic`, `hooks`, `digest` und `adapt`. Reports können unter `research/runs/` als Markdown oder JSON gespeichert werden.
+Die Skill-Datei unter `.agents/skills/social-media-research/SKILL.md` steuert die Befehle `trends`, `topic`, `hooks`, `digest` und `adapt`. Reports werden standardmäßig als minimal gestaltete Typst-Quelldatei erstellt und mit Typst zu einem PDF kompiliert. Das PDF ist das primäre Ergebnis im Chat; die `.typ`-Quelle bleibt unter `research/runs/` zur Nachvollziehbarkeit erhalten.
 
 ## Beispielbefehle
 

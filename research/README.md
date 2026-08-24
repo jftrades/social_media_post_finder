@@ -1,10 +1,12 @@
 # Research-Reports
 
-Hier können kompakte Research-Läufe als Markdown oder JSON gespeichert werden. Ein Lauf sollte den verwendeten Zeitraum, die Quellen und die Confidence-Werte nachvollziehbar machen.
+Hier werden kompakte Research-Läufe standardmäßig als Typst-Quelldokumente (`.typ`) gespeichert und mit Typst zu PDFs kompiliert. Das PDF ist das primäre Nutzerergebnis; die `.typ`-Quelle bleibt für Nachvollziehbarkeit und spätere Anpassungen erhalten. Ein Lauf sollte den verwendeten Zeitraum, die Quellen und die Confidence-Werte nachvollziehbar machen. Im Chat erscheint zusätzlich eine kurze Zusammenfassung.
 
-## Empfohlene Struktur pro Fundstück
+Die Vorlage liegt unter `research/templates/social-media-report.typ`. Sie ist bewusst minimal und clean gehalten: A4, zurückhaltende Farben, klare Metadaten und ein kurzer Einstieg statt eines Titelblatts. Die PDF-Datei wird als Build-Artefakt erzeugt; die Typst-Datei ist die editierbare Quelle.
 
-```yaml
+## Inhalt pro Fundstück
+
+```text
 id: sm-YYYYMMDD-001
 platform: tiktok
 public_url: https://...

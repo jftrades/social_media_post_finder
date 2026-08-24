@@ -19,4 +19,5 @@
 
 - Keine Secrets, API-Keys, großen Videodateien oder Rohdaten committen.
 - Reports gehören nach `research/runs/` und sollen kompakt sowie reproduzierbar sein.
+- Reports werden standardmäßig als Typst-Quelle (`.typ`) erstellt und mit Typst zu einem PDF kompiliert; die Quelle bleibt nachvollziehbar erhalten.
 - Vor Änderungen an der Skill-Datei die lokale Skill-Creator-Anleitung berücksichtigen; danach den Skill-Validator ausführen.

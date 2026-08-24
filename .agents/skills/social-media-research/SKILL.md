@@ -39,7 +39,11 @@ Do not claim to have watched a video stream directly. If genuine video analysis 
 
 ## Report format
 
-Write concise reports in German. Every research item should contain:
+Write the report in German as a clean Typst document and compile it to PDF by default. Read `config/research_profile.yaml` for the output settings and use `research/templates/social-media-report.typ` as the visual and structural template. Save the completed `.typ` source and the compiled `.pdf` under `research/runs/` with matching date-based filenames. The PDF is the primary user-facing result; keep the `.typ` source for traceability and later edits. Replace all placeholders; do not leave template instructions in the finished report.
+
+Return a short summary in the chat as well, including a link to the generated PDF and, when useful, the Typst source. The chat summary should state the time window, number of selected items, and the strongest repeated patterns. If the user explicitly asks for chat-only output or another format, follow that request instead.
+
+Every research item in the Typst report should contain:
 
 ```text
 ID

@@ -43,6 +43,17 @@ defaults:
   max_report_items: 10
   include_own_video_comparison: false
 
+report_output:
+  default_format: typst_pdf
+  template: research/templates/social-media-report.typ
+  directory: research/runs
+  save_by_default: true
+  save_source_typ: true
+  compile_with: typst
+  save_pdf: true
+  chat_summary: true
+  pdf_optional: false
+
 virality_signals:
   - views_per_time
   - likes_comments_shares_when_available

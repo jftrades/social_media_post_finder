@@ -38,3 +38,7 @@ tmp/
 temp/
 *.tmp
 *.partial
+
+# Generated Typst artifacts; the .typ source reports remain tracked
+research/runs/*.pdf
+research/runs/*.log
