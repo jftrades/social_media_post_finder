@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.python-version
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Tool and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Large media and raw research material
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.wav
+*.mp3
+*.zip
+*.parquet
+*.sqlite
+*.db
+
+# Temporary output
+tmp/
+temp/
+*.tmp
+*.partial

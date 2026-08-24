@@ -1,0 +1,91 @@
+profile_name: ferdi-social-research
+
+owned_accounts:
+  - handle: ideas_by_ferdi
+    platform: tiktok
+    url: https://www.tiktok.com/@ideas_by_ferdi
+    production_style: camera_postproduction
+    production_notes: "Kamera-basierter, stärker geplanter Content mit aufwendigerer Nachbearbeitung."
+  - handle: ferdifun7
+    platform: tiktok
+    url: https://www.tiktok.com/@ferdifun7
+    production_style: talking_head_spontaneous
+    production_notes: "Direkter Talking Head, spontaner umsetzbar, geringerer Produktions- und Schnittaufwand."
+
+content_topics:
+  - sport
+  - fitness
+  - studentenalltag
+  - praktische_studententipps
+  - sidequestmaxxing
+  - selbstoptimierung
+
+topic_combinations:
+  - [sport, studentenalltag]
+  - [fitness, produktivitaet]
+  - [sidequestmaxxing, studentenleben]
+  - [selbstoptimierung, uni]
+
+audience:
+  primary_region: DACH
+  primary_languages: [de]
+  secondary_languages: [en]
+  audience_notes: "Deutschsprachige Studierende und junge Erwachsene mit Interesse an Sport, Entwicklung und praktischen Systemen."
+
+platforms:
+  - tiktok
+  - instagram_reels
+  - youtube_shorts
+
+defaults:
+  lookback_days: 7
+  max_candidates: 50
+  max_report_items: 10
+  include_own_video_comparison: false
+
+virality_signals:
+  - views_per_time
+  - likes_comments_shares_when_available
+  - outlier_against_similar_videos_or_creator_baseline
+  - repeated_format_across_multiple_creators
+  - trend_recency
+  - topic_fit
+
+report_fields:
+  - id
+  - platform
+  - public_url
+  - published_at_if_verified
+  - title_or_caption
+  - topic
+  - format
+  - hook_or_hook_mechanism
+  - first_seconds_promise
+  - pattern_interrupt
+  - visible_virality_signals
+  - recency
+  - relevance
+  - confidence
+  - independent_adaptation_idea
+
+source_rules:
+  public_sources_only: true
+  direct_links_required: true
+  copy_verbatim_hooks: false
+  distinguish_facts_interpretation_idea: true
+  unknown_when_not_verifiable: true
+
+model_strategy:
+  preselection_and_structured_extraction: GPT-5.6 Luna
+  final_digest_and_multi_item_synthesis: GPT-5.6 Terra
+  strategic_synthesis_or_creative_quality_control: GPT-5.6 Sol
+  video_analysis_note: "Modelle nicht so behandeln, als könnten sie Videostreams direkt ansehen; bei echter Videoanalyse mit Transkript, Metadaten und ausgewählten Frames arbeiten."
+  api_key_architecture_required_for_v1: false
+
+scope_limits:
+  dashboard: false
+  automatic_publication: false
+  hermes_or_openclaw: false
+  persistent_background_automation: false
+  large_database: false
+  full_video_archiving: false
