@@ -12,7 +12,8 @@
 - Beobachtete Fakten, Interpretation und eigene Content-Idee sichtbar trennen.
 - Veröffentlichungsdatum, Performancewerte und Transkripte nur als verifiziert ausgeben, wenn sie tatsächlich überprüfbar sind; sonst `unknown` oder niedrige Confidence verwenden.
 - Keine wortwörtliche Übernahme von Hooks, Captions oder Skriptpassagen.
-- Reports begrenzen: standardmäßig maximal 50 Kandidaten prüfen und maximal 10 Fundstücke ausgeben.
+- Reports begrenzen: standardmäßig maximal 50 Kandidaten prüfen, aber 30–40 kompakte Ideenoptionen und höchstens 20 Quellen im Quellen-Dump ausgeben.
+- Reports sollen als Auswahlmenü funktionieren: keine Einzelvideo-Reviews, keine vollständigen Skripte und keine detaillierten Regieanweisungen.
 - Keine Veröffentlichung, keine Nachrichten und keine Änderungen an Social-Media-Accounts durchführen.
 
 ## Repository-Hygiene
