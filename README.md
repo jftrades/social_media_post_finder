@@ -1,23 +1,32 @@
 # Social Media Post Finder
 
-Sammelt aktuelle öffentliche Signale von TikTok, Instagram Reels und YouTube Shorts und übersetzt sie in eigenständige Ideen für Sport, Fitness, Studentenalltag, Sidequestmaxxing und Selbstoptimierung.
+Dieses Repository enthält den fokussierten Research-Skill für Ideas by Ferdi. Er untersucht aktuelle öffentliche Fitness-Inhalte weltweit und liefert belegte Signale statt Content-Ideen.
 
-## Eigene Accounts
+## Der Research-Skill findet
 
-- [@ideas_by_ferdi](https://www.tiktok.com/@ideas_by_ferdi): Kamera, stärker geplantes Konzept und aufwendigere Nachbearbeitung.
-- [@ferdifun7](https://www.tiktok.com/@ferdifun7): Talking Head, spontaner und mit geringerem Produktionsaufwand.
+- neue englische und deutsche Fitness-Trends
+- wiederkehrende Videoformate und Challenges
+- tatsächlich verwendete Hooks viraler Videos ab 30 Sekunden
+- Creator-relative Outlier statt nur großer absoluter Viewzahlen
 
-## Zweck und Grenzen
+Jeder Befund enthält seine direkte öffentliche Quelle. Der Skill vergleicht keine eigenen Videos, schreibt keine Skripte und entwickelt keine Adaptionen oder Produktionsideen.
 
-Der erste Projektstand konzentriert sich auf Research, Trends, Hooks, Formate und direkt verlinkbare Quellen. 
+## Ablauf
 
-Die Skill-Datei unter `.agents/skills/social-media-research/SKILL.md` steuert die Befehle `trends`, `topic`, `hooks`, `digest` und `adapt`. Ein Standard-Research-Report liefert zuerst 30–40 auswählbare Ideen, danach getrennte minimale Produktionsimpulse für beide Accounts und zuletzt einen deutschsprachigen Quellen-Dump. Reports werden als minimal gestaltete Typst-Quelldatei erstellt und mit Typst zu einem 2–3-seitigen PDF kompiliert.
+Beim Start stellt der Skill zuerst höchstens zwei kurze Fragen: offener Scan oder konkreter Ausgangspunkt sowie gewünschter Fitness-Schwerpunkt und Zeitraum. Ohne Vorgabe gilt weltweit, Englisch und Deutsch, letzte 7 Tage.
 
-## Beispielbefehle
+Ein vollständiger Lauf liefert bis zu:
 
-research trends
-research Sport x Studentenalltag
-research Sidequestmaxxing
-research hooks für: morgens trainieren trotz Uni
-research digest der letzten 14 Tage
-adapt item: <ID>
+- 15 Trends
+- 15 Formate oder Challenges
+- 15 virale Hooks
+
+Wenn nicht genügend belastbare Fundstücke zugänglich sind, wird die Lücke offengelegt statt mit schwachen Treffern aufgefüllt.
+
+## Beispielaufrufe
+
+research full scan
+research trends running
+research formats hybrid athlete
+research hooks gym
+research investigate <public URL>

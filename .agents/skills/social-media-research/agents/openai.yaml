@@ -1,3 +1,5 @@
 interface:
-  display_name: "Social Media Research"
-  short_description: "Help with Social Media Research tasks"
+  display_name: "Global Fitness Research"
+  short_description: "Find viral fitness trends, formats and hooks"
+  brand_color: "#5575E7"
+  default_prompt: "Use $social-media-research to ask what I want to scan, then research current global fitness trends, formats, challenges, and verified viral hooks."

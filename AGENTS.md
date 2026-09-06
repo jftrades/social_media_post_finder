@@ -2,23 +2,21 @@
 
 ## Scope
 
-- Den Research-Workflow aus `.agents/skills/social-media-research/SKILL.md` verwenden, wenn der Nutzer Trends, Themen, Hooks, Digests oder Adaptionen anfordert.
-- Nicht in generisches Social-Media-Copywriting, Veröffentlichung, Outreach oder Account-Management abdriften.
-- Beide eigenen Accounts als ein gemeinsames Content-Universum behandeln. Unterschiede im Produktionsaufwand nur bei der Adaption berücksichtigen.
+- Für aktuelle öffentliche Fitness-Trends, Formate, Challenges und nachweislich verwendete virale Hooks den Workflow aus .agents/skills/social-media-research/SKILL.md verwenden.
+- Research bleibt externe Evidenz für Ideas by Ferdi. Storytelling, eigene Ideen, Skripte, Editing, Produktionsplanung, Lieblingscreator-Analysen und die Auswertung eigener Posts gehören in getrennte Skills.
+- Vor einem Research-Lauf die kurze Intake-Frage des Skills abwarten.
 
-## Research-Qualität    
+## Research-Qualität
 
 - Nur öffentliche und direkt verlinkbare Quellen verwenden.
-- Beobachtete Fakten, Interpretation und eigene Content-Idee sichtbar trennen.
-- Veröffentlichungsdatum, Performancewerte und Transkripte nur als verifiziert ausgeben, wenn sie tatsächlich überprüfbar sind; sonst `unknown` oder niedrige Confidence verwenden.
-- Keine wortwörtliche Übernahme von Hooks, Captions oder Skriptpassagen.
-- Reports begrenzen: standardmäßig maximal 50 Kandidaten prüfen, aber 30–40 kompakte Ideenoptionen und höchstens 20 Quellen im Quellen-Dump ausgeben.
-- Reports sollen als Auswahlmenü funktionieren: keine Einzelvideo-Reviews, keine vollständigen Skripte und keine detaillierten Regieanweisungen.
+- Beobachtete Fakten und Interpretation sichtbar trennen.
+- Veröffentlichungsdatum, Dauer, Performancewerte und Transkripte nur als verifiziert ausgeben, wenn sie tatsächlich überprüfbar sind; sonst unknown oder niedrigere Confidence verwenden.
+- Keine einzelnen Posts ohne Wiederholung als Trend darstellen.
 - Keine Veröffentlichung, keine Nachrichten und keine Änderungen an Social-Media-Accounts durchführen.
 
 ## Repository-Hygiene
 
 - Keine Secrets, API-Keys, großen Videodateien oder Rohdaten committen.
-- Reports gehören nach `research/runs/` und sollen kompakt sowie reproduzierbar sein.
-- Reports werden standardmäßig als Typst-Quelle (`.typ`) erstellt und mit Typst zu einem PDF kompiliert; die Quelle bleibt nachvollziehbar erhalten.
-- Vor Änderungen an der Skill-Datei die lokale Skill-Creator-Anleitung berücksichtigen; danach den Skill-Validator ausführen.
+- Reports gehören nach research/runs/; jeder Befund verlinkt seine Quelle direkt.
+- Typst-Quellen bleiben nachvollziehbar erhalten; PDFs sind Build-Artefakte.
+- Vor Änderungen an einer Skill-Datei die lokale Skill-Creator-Anleitung berücksichtigen und danach den Skill-Validator ausführen.

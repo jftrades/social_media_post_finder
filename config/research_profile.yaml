@@ -1,94 +1,71 @@
-profile_name: ferdi-social-research
+profile_name: global-fitness-research
+intended_account: ideas_by_ferdi
 
-owned_accounts:
-  - handle: ideas_by_ferdi
-    platform: tiktok
-    url: https://www.tiktok.com/@ideas_by_ferdi
-    production_style: camera_postproduction
-    production_notes: "Kamera-basierter, stärker geplanter Content mit aufwendigerer Nachbearbeitung."
-  - handle: ferdifun7
-    platform: tiktok
-    url: https://www.tiktok.com/@ferdifun7
-    production_style: talking_head_spontaneous
-    production_notes: "Direkter Talking Head, spontaner umsetzbar, geringerer Produktions- und Schnittaufwand."
+coverage:
+  regions: [global]
+  discovery_languages: [en, de]
+  report_language: de
+  platforms:
+    - youtube_shorts
+    - tiktok
+    - instagram_reels
+  minimum_video_duration_seconds: 30
 
-content_topics:
-  - sport
-  - fitness
-  - studentenalltag
-  - praktische_studententipps
-  - sidequestmaxxing
-  - selbstoptimierung
+research_window:
+  default_days: 7
+  fallback_days: 14
+  disclose_fallback_extension: true
 
-topic_combinations:
-  - [sport, studentenalltag]
-  - [fitness, produktivitaet]
-  - [sidequestmaxxing, studentenleben]
-  - [selbstoptimierung, uni]
+intake:
+  ask_before_research: true
+  maximum_questions: 2
+  ask_for_seed_or_open_scan: true
+  ask_for_focus_and_time_window: true
 
-audience:
-  primary_region: DACH
-  primary_languages: [de]
-  secondary_languages: [en]
-  audience_notes: "Deutschsprachige Studierende und junge Erwachsene mit Interesse an Sport, Entwicklung und praktischen Systemen."
+full_report_targets:
+  trends: 15
+  formats_or_challenges: 15
+  viral_hooks: 15
 
-platforms:
-  - tiktok
-  - instagram_reels
-  - youtube_shorts
+retrieval_budget:
+  minimum_candidates_for_full_scan: 60
+  maximum_candidates: 150
+  stop_when_targets_are_verified: true
+  never_pad_to_target: true
 
-defaults:
-  lookback_days: 14
-  max_candidates: 50
-  min_idea_items: 30
-  max_idea_items: 40
-  max_source_dump_items: 20
-  report_page_target: 3
-  event_lookahead_days: 30
-  include_own_video_comparison: false
+outlier_method:
+  creator_baseline_video_count: 10
+  strong_outlier_ratio: 2.0
+  prefer_age_comparable_posts: true
+  require_direct_public_source: true
+
+ranking_signals:
+  - creator_relative_outlier
+  - views_per_day_when_available
+  - cross_creator_recurrence
+  - recency
+  - evidence_completeness
+  - topic_relevance
 
 report_output:
   default_format: typst_pdf
-  template: research/templates/idea-dump-report.typ
+  template: research/templates/global-fitness-research.typ
   directory: research/runs
-  save_by_default: true
   save_source_typ: true
-  compile_with: typst
   save_pdf: true
   chat_summary: true
-  pdf_optional: false
+  direct_source_per_item: true
+  detached_source_dump: false
 
-virality_signals:
-  - views_per_time
-  - likes_comments_shares_when_available
-  - outlier_against_similar_videos_or_creator_baseline
-  - repeated_format_across_multiple_creators
-  - trend_recency
-  - topic_fit
-
-report_sections:
-  - top_30_to_40_idea_options
-  - minimal_account_specific_production
-  - german_source_dump_last_14_days
-
-source_rules:
-  public_sources_only: true
-  direct_links_required: true
-  copy_verbatim_hooks: false
-  distinguish_facts_interpretation_idea: true
-  unknown_when_not_verifiable: true
-
-model_strategy:
-  preselection_and_structured_extraction: GPT-5.6 Luna
-  final_digest_and_multi_item_synthesis: GPT-5.6 Sol
-  strategic_synthesis_or_creative_quality_control: GPT-5.6 Sol
-  video_analysis_note: "Modelle nicht so behandeln, als könnten sie Videostreams direkt ansehen; bei echter Videoanalyse mit Transkript, Metadaten und ausgewählten Frames arbeiten."
-  api_key_architecture_required_for_v1: false
-
-scope_limits:
-  dashboard: false
-  automatic_publication: false
-  hermes_or_openclaw: false
-  persistent_background_automation: false
-  large_database: false
-  full_video_archiving: false
+scope_exclusions:
+  - favorite_creator_watchlists
+  - own_video_analysis
+  - own_account_comparison
+  - content_ideas
+  - rewritten_hooks
+  - scripts
+  - storytelling
+  - production_planning
+  - editing
+  - forced_university_angle
+  - publishing_or_account_actions
