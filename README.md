@@ -1,6 +1,6 @@
 # Social Media Post Finder
 
-Dieses Repository enthält den fokussierten Research-Skill für Ideas by Ferdi. Er untersucht aktuelle öffentliche Fitness-Inhalte weltweit und liefert belegte Signale statt Content-Ideen.
+Dieses Repository enthält den fokussierten Research-Skill für Ideas by Ferdi. Er untersucht aktuelle öffentliche Fitness-Inhalte aus Europa, den USA und Kanada und liefert belegte Signale statt Content-Ideen.
 
 ## Der Research-Skill findet
 
@@ -13,7 +13,7 @@ Jeder Befund enthält seine direkte öffentliche Quelle. Der Skill vergleicht ke
 
 ## Ablauf
 
-Beim Start stellt der Skill zuerst höchstens zwei kurze Fragen: offener Scan oder konkreter Ausgangspunkt sowie gewünschter Fitness-Schwerpunkt und Zeitraum. Ohne Vorgabe gilt weltweit, Englisch und Deutsch, letzte 7 Tage.
+Beim Start stellt der Skill zuerst höchstens zwei kurze Fragen: offener Scan oder konkreter Ausgangspunkt sowie gewünschter Fitness-Schwerpunkt und Zeitraum. Ohne Vorgabe gelten Europa, USA und Kanada, Englisch und Deutsch sowie die letzten 7 Tage.
 
 Ein vollständiger Lauf liefert bis zu:
 

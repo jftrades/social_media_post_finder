@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ideas by Ferdi Storytelling"
+  short_description: "Ehrliche Short-Form-Storys aus deinem Alltag"
+  default_prompt: "Nutze $ideas-by-ferdi-storytelling, um meine ungeordneten Notizen in zwei ehrliche, filmbare Storytelling-Varianten zu verwandeln."

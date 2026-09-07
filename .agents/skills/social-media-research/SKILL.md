@@ -1,11 +1,11 @@
 ---
 name: social-media-research
-description: Research current public fitness trends, repeatable video formats or challenges, and hooks used by verified viral 30-second-plus videos. Use for global English and German short-form research for Ideas by Ferdi; do not use for storytelling, scripts, content ideas, editing, production planning, favorite-creator analysis, or evaluation of Ferdi's own posts.
+description: Research current public fitness trends, repeatable video formats or challenges, and hooks used by verified viral 30-second-plus videos from Europe, the United States, and Canada. Use for English and German short-form research for Ideas by Ferdi; do not use for storytelling, scripts, content ideas, editing, production planning, favorite-creator analysis, or evaluation of Ferdi's own posts.
 metadata:
-  short-description: Research viral global fitness signals
+  short-description: Research viral fitness signals
 ---
 
-# Global Fitness Research
+# Fitness Trend Research
 
 Collect and compare current public evidence for Ideas by Ferdi. Return research findings only. Do not turn findings into original content ideas, scripts, rewritten hooks, shot lists, editing advice, or assessments of Ferdi's own videos.
 
@@ -32,7 +32,7 @@ Use full scan when the user asks generally for new fitness research. Follow an e
 
 1. Read config/research_profile.yaml.
 2. Read [references/research-method.md](references/research-method.md) before collecting candidates.
-3. Search globally across public English and German sources. Do not start from a fixed creator list and do not privilege DACH unless the user requests it.
+3. Search public English and German sources from Europe, the United States, and Canada. Treat other regions as out of scope unless the user explicitly requests them. Do not start from a fixed creator list and do not privilege DACH unless the user requests it.
 4. Consider only videos with a verified or reasonably supported duration of at least 30 seconds. Inspect enough candidates to meet the requested category counts within the configured retrieval budget.
 5. Verify every included item against a direct public post or video URL. Record the metric snapshot and retrieval date. Never infer missing metrics or transcripts.
 6. Separate observed facts from interpretation. Use unknown and lower confidence when evidence is incomplete.

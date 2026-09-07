@@ -34,9 +34,12 @@ Each card should contain only:
 
 Keep cards readable and concise. Move detailed raw evidence into the Typst source comments or a matching structured data file when available, not into tiny type.
 
+To keep the fixed cards stable, use a one-line title, a one-line metadata row, a one-line signal, at most two short lines for the observed fact, and at most two short lines for the interpretation. Shorten prose instead of reducing the font size.
+
 ## Language and visual style
 
 - Write the report in German while preserving short verified English hook wording.
 - Use the supplied portrait A4 template without shrinking typography to force a page target.
 - Prefer whitespace, strong hierarchy, restrained blue accents, subtle borders, and consistent card heights.
+- Use Segoe UI or another explicit sans-serif fallback throughout every finding card. Never use a serif font inside the 15-item grids.
 - Keep body text at a readable size. Allow additional pages instead of compressing 45 findings into an unreadable grid.

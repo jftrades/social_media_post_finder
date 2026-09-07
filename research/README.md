@@ -12,4 +12,4 @@ Jeder Befund trägt seine direkte Quelle, den stärksten sichtbaren Performanceh
 
 Die Reports enthalten keine eigenen Content-Ideen, keine umgeschriebenen Hooks, keine Skripte, keine Produktionsanweisungen und keinen Vergleich mit Ferdis Videos.
 
-Das Design verwendet A4-Hochformat, Alte Haas Grotesk, großzügige Abstände, zurückhaltende Blautöne und klar getrennte Karten. Lesbarkeit hat Vorrang vor einer festen Seitenzahl.
+Das Design verwendet A4-Hochformat, Segoe UI, großzügige Abstände, zurückhaltende Blautöne und klar getrennte Karten. Alle Karten sind konsequent serifenlos. Lesbarkeit hat Vorrang vor einer festen Seitenzahl.

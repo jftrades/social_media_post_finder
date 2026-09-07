@@ -1,8 +1,12 @@
-profile_name: global-fitness-research
+profile_name: europe-north-america-fitness-research
 intended_account: ideas_by_ferdi
 
 coverage:
-  regions: [global]
+  regions:
+    - europe
+    - united_states
+    - canada
+  other_regions: only_when_explicitly_requested
   discovery_languages: [en, de]
   report_language: de
   platforms:

@@ -3,6 +3,7 @@
 ## Scope
 
 - Für aktuelle öffentliche Fitness-Trends, Formate, Challenges und nachweislich verwendete virale Hooks den Workflow aus .agents/skills/social-media-research/SKILL.md verwenden.
+- Der Standardscope umfasst Europa, die USA und Kanada. Andere Regionen nur nach ausdrücklicher Nutzeranfrage einbeziehen.
 - Research bleibt externe Evidenz für Ideas by Ferdi. Storytelling, eigene Ideen, Skripte, Editing, Produktionsplanung, Lieblingscreator-Analysen und die Auswertung eigener Posts gehören in getrennte Skills.
 - Vor einem Research-Lauf die kurze Intake-Frage des Skills abwarten.
 

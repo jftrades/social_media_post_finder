@@ -1,6 +1,6 @@
 # Research method
 
-Use this method for candidate collection, verification, and ranking. The research target is global public English- and German-language fitness content, not a fixed list of creators.
+Use this method for candidate collection, verification, and ranking. The research target is public English- and German-language fitness content from Europe, the United States, and Canada, not a fixed list of creators.
 
 ## Category definitions
 
@@ -18,7 +18,7 @@ The first spoken or on-screen promise used by a 30-second-plus video with strong
 
 ## Candidate search
 
-Search English and German sources in parallel across YouTube Shorts, TikTok, and Instagram Reels. Expand into public trend pages, hashtag or keyword results, and fitness media only to discover direct posts. The final evidence must link to the original public post whenever accessible.
+Search English and German sources from Europe, the United States, and Canada in parallel across YouTube Shorts, TikTok, and Instagram Reels. Use creator location, profile context, language, event location, or another public regional signal when available. Do not collect candidates from other regions unless the user explicitly expands the scope. Expand into public trend pages, hashtag or keyword results, and fitness media only to discover direct posts. The final evidence must link to the original public post whenever accessible.
 
 For a full scan, inspect at least 60 and at most 150 candidates. Continue until every category has 15 verified findings or the accessible retrieval budget is exhausted. If the 7-day window is too sparse, extend once to 14 days and disclose the extension.
 

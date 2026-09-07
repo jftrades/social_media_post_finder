@@ -14,13 +14,13 @@
   footer: context [
     #grid(
       columns: (1fr, auto),
-      align(left)[#text(size: 7.5pt, fill: muted)[IDEAS BY FERDI / GLOBAL FITNESS RESEARCH]],
+      align(left)[#text(size: 7.5pt, fill: muted)[IDEAS BY FERDI / FITNESS TREND RESEARCH]],
       align(right)[#text(size: 7.5pt, fill: muted)[#counter(page).display("01")]],
     )
   ],
 )
 
-#set text(font: ("Alte Haas Grotesk", "Arial"), size: 9.5pt, fill: ink, lang: "de")
+#set text(font: ("Segoe UI", "Arial"), size: 9.5pt, fill: ink, lang: "de")
 #set par(justify: false, leading: 0.58em, spacing: 0.35em)
 
 #let confidence-color(level) = if level == "high" {
@@ -52,14 +52,14 @@
 ]
 
 #let report-cover(
-  title: "Global Fitness",
+  title: "Fitness Trend",
   accent-title: "Research",
   summary: "Aktuelle externe Signale. Keine Ideen, Skripte oder Eigenanalyse.",
   date: none,
   window: "7 Tage",
   candidates: "unknown",
   verified: "unknown",
-  scope: "Global / Englisch + Deutsch / Videos ab 30 Sekunden",
+  scope: "Europa + USA + Kanada / Englisch + Deutsch / Videos ab 30 Sekunden",
 ) = [
   #v(0.45cm)
   #eyebrow([SOCIAL SIGNAL REPORT])
@@ -134,13 +134,15 @@
   source-url,
 ) = block(
   width: 100%,
-  height: 4.45cm,
+  height: 4.65cm,
   breakable: false,
   fill: paper,
   stroke: 0.7pt + line,
   radius: 7pt,
-  inset: 9pt,
+  inset: 8pt,
 )[
+  #set text(font: ("Segoe UI", "Arial"))
+  #set par(leading: 0.38em, spacing: 0em)
   #let number-label = if n < 10 { "0" + str(n) } else { str(n) }
   #let confidence-label = if confidence == "high" {
     "HIGH"
@@ -161,20 +163,27 @@
     ],
   )
 
-  #v(0.14cm)
-  #text(size: 11pt, weight: "bold", fill: ink)[#title]
   #v(0.1cm)
+  #text(size: 10.5pt, weight: "bold", fill: ink)[#title]
+  #v(0.06cm)
   #text(size: 7.8pt, fill: muted)[#meta]
 
-  #v(0.22cm)
+  #v(0.15cm)
   #text(size: 8.4pt, weight: "bold", fill: accent)[#signal]
-  #v(0.1cm)
-  #text(size: 8pt, fill: ink)[#observed]
-  #text(size: 7.8pt, fill: muted, style: "italic")[#interpretation]
+  #v(0.07cm)
+  #text(size: 7.4pt, fill: ink)[
+    #text(weight: "bold")[Beobachtet:] #observed
+  ]
+  #v(0.04cm)
+  #text(size: 7.3pt, fill: muted)[
+    #text(weight: "bold")[Interpretation:] #interpretation
+  ]
 
   #v(1fr)
-  #link(source-url)[
-    #text(size: 7.8pt, weight: "bold", fill: accent)[#source-label  ->]
+  #block(width: 100%, fill: accent-soft, radius: 4pt, inset: (x: 7pt, y: 3pt))[
+    #link(source-url)[
+      #text(size: 7.6pt, weight: "bold", fill: accent)[#source-label  ->]
+    ]
   ]
 ]
 
