@@ -1,6 +1,6 @@
 ---
 name: ideas-by-ferdi-storytelling
-description: Turn Ferdi's raw notes, real events, planned challenges, day-in-the-life concepts, food formats, training updates, or deeper personal topics into exactly two honest German short-form storytelling variants for Ideas by Ferdi. Use for hooks, scripts, re-hooks, emotional arcs, CTAs, and filming structure; not for trend research, editing, performance analysis, or copying creators.
+description: Help Ferdi with storytelling by turning raw notes, real events, planned challenges, day-in-the-life concepts, food formats, training updates, or deeper personal topics into exactly two honest German short-form variants for Ideas by Ferdi. Use whenever he asks for Storytelling-Hilfe, hooks, scripts, re-hooks, emotional arcs, CTAs, or filming structure; not for trend research, editing, performance analysis, or copying creators.
 ---
 
 # Ideas by Ferdi Storytelling
@@ -26,7 +26,25 @@ Ferdi will often provide unstructured spoken notes. Extract silently:
 - the honest feeling and why the event mattered;
 - the useful or relatable point for the viewer.
 
-Do not make Ferdi complete a questionnaire when the notes are sufficient. Ask at most two short follow-up questions only when a missing fact would materially change the story, especially an unknown result, duration, goal, or filming constraint. For a future event with no result yet, create branches for plausible outcomes rather than inventing one.
+### Intake for a general storytelling request
+
+If Ferdi only says that he needs help with storytelling, wants to make a story, or otherwise has not supplied enough context to draft, ask these four short questions together before writing:
+
+1. **Worum geht es genau?** What happened or is planned, what is the central event/question, and how long should the video be?
+2. **Persönlicher Bezug?** Does Ferdi want a specific experience or part of his story included, or should the video stay entirely in the present?
+3. **Welches Footage gibt es?** Distinguish among existing B-roll only, a seated/direct-to-camera recording, a future location where the camera will be taken along, or a mixture. Ask which concrete clips already exist or can realistically be filmed.
+4. **Welche Emotion?** Positive/uplifting, deep and vulnerable, light/funny, tense/challenge-driven, or a stated mixture?
+
+Ask only for items that are genuinely missing. If Ferdi's initial notes already answer some or all four, do not repeat those questions. When enough information is present, draft immediately.
+
+Footage is a structural input, not an afterthought. Build the story around what can be shown:
+
+- With **B-roll only**, write a clean voice-over whose claims are visibly supported by the available clips.
+- With **direct-to-camera footage**, allow pauses, facial reaction, and more personal sentences; avoid constant visual narration.
+- For a **planned on-location shoot**, give a compact capture plan and short live-reaction prompts before drafting the final outcome.
+- For a **mixed format**, identify which emotional lines belong on camera and which action beats belong in voice-over.
+
+After the intake, ask at most two additional short follow-up questions only when a missing fact would materially change the story, especially an unknown result, target, duration, or filming constraint. For a future event with no result yet, create branches for plausible outcomes rather than inventing one.
 
 ## Build the story
 
@@ -97,4 +115,3 @@ Before answering, verify:
 - The emotional point follows from what happened.
 - Both variants differ structurally, not just in wording.
 - No claim, result, medical implication, or personal history was invented.
-
