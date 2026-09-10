@@ -22,13 +22,15 @@ Der minimale lokale Workflow deckt drei Fälle ab:
 
 Vor dem Editing sieben Antworten abwarten: Pausen/Retakes kürzen (letzte Alternative behalten)? Clip-Art und Dateinamen/Reihenfolge? Standard-Untertitel oder Änderungen/keine? Standardmusik oder anderer Song/keine? Titel und Wortlaut? B-Roll-Modus und Einschränkungen? Handy oder Kamera?
 
-Defaults: Purfview Faster Whisper **Medium**, Deutsch, ohne API-Key. Alte Haas Grotesk Bold, weiß mit dezentem, weichgezeichnetem Schatten; fett und Buchstabenabstand −1, kurze Caption-Blöcke, y=1200 bei 1080×1920. **Phrygian_Drift_2026-09-04T124142.mp3 mit −20 dB Gain, ab 0:30**. Stimme auf −16 LUFS mit −2 dBTP Ziel anpassen, Master-Limiter gegen Übersteuerung. Schon verzerrtes Audio wird dadurch nicht repariert.
+Defaults: Purfview Faster Whisper **Medium**, Deutsch, ohne API-Key. Alte Haas Grotesk Bold, weiß mit dezentem, weichgezeichnetem Schatten; fett und Buchstabenabstand −1, kurze Caption-Blöcke, y=1240 bei 1080×1920. **Phrygian_Drift_2026-09-04T124142.mp3 mit −20 dB Gain, ab 0:30**. Stimme auf −16 LUFS mit −2 dBTP Ziel anpassen, Master-Limiter gegen Übersteuerung. Schon verzerrtes Audio wird dadurch nicht repariert.
 
 Der Agent prüft Retakes anhand von Wortzeiten und Audio und erstellt den Schnittplan; bedeutungsvolle Wiederholungen bleiben erhalten. Whisper kann Versprecher auslassen. Subtitle-Edit-GUI-Postprocessing wird nicht direkt übernommen. Das lokale Tool baut kurze Captions aus Purfview-Wortzeiten.
 
 Originale unter `project_videos/unfinished_projects/<projekt>/`, temporäre Dateien unter `project_videos/work/<projekt>/`. Nach Render-Prüfung werden nur verwendete Quellen hashgeprüft nach `project_videos/finished_projects/<projekt>/originals/` kopiert, zusammen mit `final.mp4` und Plan. Erst danach werden die ausgewählten Eingangsdateien aus `project_videos/unfinished_projects/` entfernt. Externe Quellen und B-Roll-Bibliotheken bleiben erhalten; bestehende fertige Projekte werden nicht überschrieben. Alle drei Projektordner sind ignoriert.
 
-Tooling: uv mit Python 3.11+ und Pillow (automatisch über Script-Metadaten installiert), lokale Purfview-Installation inklusive `_models/faster-whisper-medium` und gebündeltem FFmpeg. Nach Clone lokal bereitstellen. [Workflow und Jobvorlage](skills/video_editing/ideas-by-ferdi-video-editor/references/workflow.md) beschreiben `prepare`, `plan`, `render`, `finish`. Auto-Cutout/RVM und Zooms folgen später. Handy bleibt ohne LUT; Kamera erhält zuerst CINELIKE D to REC 709_26.P1003055 mit 75 %, danach MERRY_MEN_II mit 30 %.
+Tooling: uv mit Python 3.11+ und Pillow (automatisch über Script-Metadaten installiert), lokale Purfview-Installation inklusive `_models/faster-whisper-medium` und gebündeltem FFmpeg. Nach Clone lokal bereitstellen. [Workflow und Jobvorlage](skills/video_editing/ideas-by-ferdi-video-editor/references/workflow.md) beschreiben `prepare`, `plan`, `render`, `finish`. Auto-Cutout/RVM folgt später. Handy bleibt ohne LUT; Kamera erhält zuerst CINELIKE D to REC 709_26.P1003055 mit 75 %, danach MERRY_MEN_II mit 30 %.
+
+Zusatzfrage 8 nur für einzelne/mehrere Sprechvideos: **Pointe-Zooms mit Whoosh – Ja / Nein?** Nur bei Ja gezielte kurze Atempausen erhalten, weich 100→120 % zoomen und spätestens beim nächsten Cut/Angle-Wechsel zurück auf 100 %. Passende Rückzooms im Sprechfluss sind möglich. Whoosh: `whoosh-swift-cut-jam-fx-1-00-00.mp3`, −6 dB, zwei Halbtöne tiefer. Voice-over bleibt unverändert; Nein aktiviert keinerlei Zoom-Effekte.
 
 `agent_tooling/` enthält die kleinen, gemeinsam versionierten Audio-Presets:
 
@@ -83,4 +85,4 @@ Research trends running der letzten 7 Tage.
 Research hooks hybrid athlete.
 ```
 
-Fünfte Intake-Frage: Titel oben ja/nein und genauer Wortlaut. Standard: Alte Haas Grotesk Bold 76 px, Textoberkante y=240, schwarz auf eng anliegendem weißem Hintergrund je Textzeile, über die gesamte Videolänge. Musik startet künftig standardmäßig bei Sekunde 30. Schatten und Text werden separat gerendert, damit die Schrift trotz weichem Schatten scharf bleibt.
+Fünfte Intake-Frage: Titel oben ja/nein und genauer Wortlaut. Bei Talking Head zusätzlich Frage 9: Snapchat / Max-Readable / Blurred-key-quali. Max-Readable bleibt fest bei 76 px (auch „WTF“), schwarz auf eng weiß hinterlegten Zeilen. Blurred passt extra verstärkte weiße Tanker-Schrift proportional maximal in die obere 900×220-px-Fläche ab y=270, mit 2,5-%-Textblur und reduziertem schwarzem Schatten. Snapchat nutzt LiberationSans-Regular 46 px auf durchgehendem halbtransparentem grauem Balken. Alle Titel standardmäßig über die ganze Videolänge. Musik startet künftig standardmäßig bei Sekunde 30. Schatten und Text werden separat gerendert, damit die Schrift trotz weichem Schatten scharf bleibt.

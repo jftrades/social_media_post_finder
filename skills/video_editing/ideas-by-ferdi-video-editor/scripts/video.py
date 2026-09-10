@@ -62,6 +62,8 @@ def duration(path):
 def gate(job):
     if job.get('intake_confirmed') is not True or not all(job.get('intake', {}).get(k) for k in ('cleanup', 'clips', 'captions', 'music', 'title', 'broll', 'capture')):
         raise ValueError('First ask and receive all seven intake answers. No editing before intake.')
+    zoom_gate(job)
+    title_gate(job)
     if job.get('capture') not in ('phone', 'camera'):
         raise ValueError('Choose phone or camera capture.')
     if job.get('broll_mode') not in ('none', 'specific', 'selected', 'auto'):
@@ -113,6 +115,7 @@ def words_for(work, i):
 
 
 def plan(job, work):
+    zoom_gate(job)
     segments, output_words, offset = [], [], 0.0
     for i, source in enumerate(job['sources']):
         words = words_for(work, i)
@@ -131,6 +134,20 @@ def plan(job, work):
                     intervals.append([start, end])
         else:
             intervals = [[0, length]]
+        # Protect only explicitly selected short breaths, not every pause.
+        for z in job.get('zooms', []):
+            if z['source'] != i:
+                continue
+            if any(d['start'] < z['end'] and d['end'] > z['start'] for d in drops):
+                raise ValueError('Zoom breath overlaps a discarded take')
+            intervals.append([z['start'], z['end']])
+        merged = []
+        for start, end in sorted(intervals):
+            if merged and start <= merged[-1][1]+.00001:
+                merged[-1][1] = max(merged[-1][1], end)
+            else:
+                merged.append([start,end])
+        intervals = merged
         for start, end in intervals:
             segments.append({'source': i, 'start': start, 'end': end})
             for w in kept:
@@ -139,7 +156,81 @@ def plan(job, work):
             offset += end-start
     if not segments:
         raise ValueError('Empty edit')
-    save(work / 'plan.json', {'reviewed': False, 'job': job, 'segments': segments, 'words': output_words, 'duration': offset})
+    events = zoom_timeline(job, segments)
+    save(work / 'plan.json', {'reviewed': False, 'job': job, 'segments': segments, 'words': output_words, 'duration': offset, 'zooms': events})
+
+
+def zoom_gate(job):
+    if job['mode'] in ('single','multi'):
+        answer = job.get('intake', {}).get('zooms')
+        if answer not in ('ja','nein') or job.get('zoom_enabled') is not (answer == 'ja'):
+            raise ValueError('Ask question 8: zooms ja/nein; set zoom_enabled to match.')
+    elif job.get('zoom_enabled') or job.get('zooms'):
+        raise ValueError('Pointe zooms are not available for voice-over')
+    if job.get('zooms') and job.get('zoom_enabled') is not True:
+        raise ValueError('Zooms need explicit opt-in')
+    for z in job.get('zooms', []):
+        if not isinstance(z['source'],int) or not 0 <= z['source'] < len(job['sources']):
+            raise ValueError('Invalid zoom source')
+        values = [z['start'],z['end'],z['reset'],z.get('out_duration',0)]
+        if not all(isinstance(x,(int,float)) and math.isfinite(x) for x in values):
+            raise ValueError('Invalid zoom times')
+        if not (0 <= z['start'] < z['end'] <= z['reset'] and .1 <= z['end']-z['start'] <= .9
+                and (z.get('out_duration',0) == 0 or .1 <= z['out_duration'] <= .9)) or not z.get('reason'):
+            raise ValueError('Zoom needs a short 0.1–0.9s breath, reset and reason')
+
+
+def zoom_timeline(job, segments):
+    events = []
+    for z in job.get('zooms', []):
+        offset = 0
+        for s in segments:
+            if s['source'] == z['source'] and s['start'] <= z['start'] and z['end'] <= s['end']+.00001:
+                # Never carry the 120% framing across an edit/angle boundary.
+                reset = min(z['reset'],s['end'])
+                out = min(z.get('out_duration',0),max(0,s['end']-reset))
+                events.append(dict(start=offset+z['start']-s['start'],end=offset+z['end']-s['start'],
+                                   reset=offset+reset-s['start'],out_duration=out,reason=z['reason']))
+                break
+            offset += s['end']-s['start']
+        else:
+            raise ValueError('Zoom breath must connect to its kept spoken passage')
+    events.sort(key=lambda z:z['start'])
+    previous_end = 0
+    for z in events:
+        if z['start'] < previous_end-.00001:
+            raise ValueError('Overlapping zooms: return to 100% before another zoom')
+        previous_end = z['reset']+z['out_duration']
+        if any(b['at'] < previous_end and b['at']+b['end']-b['start'] > z['start'] for b in job.get('broll',[])):
+            raise ValueError('Move zooms outside B-roll overlays')
+    return events
+
+
+def zoom_filter(events):
+    expression = '1'
+    for z in reversed(events):
+        a,b,r,d = z['start'],z['end'],z['reset'],z['out_duration']
+        t = f'((on/30-{a})/{b-a})'
+        ramp = f'(1+0.2*{t}*{t}*(3-2*{t}))'
+        tail = expression
+        if d:
+            u = f'((on/30-{r})/{d})'
+            tail = f'if(lt(on/30,{r+d}),1.2-0.2*{u}*{u}*(3-2*{u}),{expression})'
+        expression = f'if(lt(on/30,{a}),{expression},if(lt(on/30,{b}),{ramp},if(lt(on/30,{r}),1.2,{tail})))'
+    return f"zoompan=z='{expression}':x='iw/2-iw/zoom/2':y='ih/2-ih/zoom/2':d=1:s=1080x1920:fps=30"
+
+
+def zoom_audio(events, work, length):
+    sounds = [(z['start'],z['end']-z['start']) for z in events]
+    sounds += [(z['reset'],z['out_duration']) for z in events if z['out_duration']]
+    effect = media('agent_tooling/sound_fx/whoosh-swift-cut-jam-fx-1-00-00.mp3')
+    ratio = 2**(-2/12)
+    graph = [f'[1:a]aresample=48000,asetrate={48000*ratio},aresample=48000,atempo={1/ratio},volume=-6dB,asplit={len(sounds)}'+''.join(f'[s{i}]' for i in range(len(sounds)))]
+    for i,(at,d) in enumerate(sounds):
+        graph.append(f'[s{i}]apad,atrim=duration={d},afade=t=in:d=0.015,afade=t=out:st={max(0,d-.04)}:d=0.04,adelay={round(at*48000)}S:all=1[e{i}]')
+    graph.append('[0:a]'+''.join(f'[e{i}]' for i in range(len(sounds)))+f'amix=inputs={len(sounds)+1}:duration=first:normalize=0[a]')
+    ff(['-f','lavfi','-i',f'anullsrc=r=48000:cl=stereo:d={length}','-i',effect,
+        '-filter_complex',';'.join(graph),'-map','[a]','-c:a','pcm_s16le','zoom-sfx.wav'],work)
 
 
 def ass_time(t):
@@ -167,39 +258,119 @@ def captions(job, words, work):
             header += f'Dialogue: {layer},{ass_time(start)},{ass_time(end)},Default,,0,0,0,,{{{pos}{effect}}}{text}\n'
     for g in groups:
         add_text(' '.join(w['word'] for w in g), g[0]['start'], g[-1]['end'],
-                 job.get('caption_y',1200), job.get('font','Alte Haas Grotesk'),
+                 job.get('caption_y',1240), job.get('font','Alte Haas Grotesk'),
                  job.get('font_size',58), 1, -1)
     if job.get('title'):
-        from PIL import Image, ImageDraw, ImageFont
-        font = ImageFont.truetype(str(TOOLS/'fonts'/'AlteHaasGroteskBold.ttf'), 76)
-        lines = []
-        for paragraph in job['title'].splitlines():
-            line = ''
-            for word in paragraph.split():
-                candidate = (line + ' ' + word).strip()
-                if font.getlength(candidate) > 900 and line:
-                    lines.append(line)
-                    line = word
-                else:
-                    line = candidate
-            if line:
-                lines.append(line)
-        if not lines or len(lines) > 3 or any(font.getlength(line) > 900 for line in lines):
-            raise ValueError('Title too long: shorten it or split long words.')
-        # Draw text and its tight per-line background with the same font metrics.
-        title = Image.new('RGBA', (1080, 1920))
-        draw = ImageDraw.Draw(title)
-        y = 240
-        for line in lines:
-            left, top, right, bottom = draw.textbbox((0, 0), line, font=font)
-            width, height = right-left, bottom-top
-            x = (1080-width)//2
-            draw.rounded_rectangle((x-14, y-9, x+width+14, y+height+9),
-                                   radius=9, fill='white')
-            draw.text((x-left, y-top), line, font=font, fill='black')
-            y += height+16
-        title.save(work/'title.png')
+        title_image(job, work)
     (work / 'captions.ass').write_text(header, encoding='utf-8')
+
+
+
+TITLE_STYLES = ('snapchat', 'max_readable', 'blurred_key_quali')
+
+
+def title_gate(job):
+    style = job.get('title_style', 'max_readable')
+    if style not in TITLE_STYLES:
+        raise ValueError('Unknown title style')
+    if job.get('title') and job['mode'] in ('single','multi'):
+        if job.get('intake',{}).get('title_style') != style:
+            raise ValueError('Ask title style: Snapchat / Max-Readable / Blurred-key-quali')
+    if job['mode'] == 'voiceover' and style != 'max_readable':
+        raise ValueError('New title styles are limited to talking-head formats')
+
+
+def title_image(job, work):
+    from PIL import Image, ImageDraw, ImageFont, ImageFilter
+    style = job.get('title_style','max_readable')
+    if style not in TITLE_STYLES:
+        raise ValueError('Unknown title style')
+    path = TOOLS/'fonts'/({'snapchat':'LiberationSans-Regular.ttf','blurred_key_quali':'Tanker-Regular.otf'}.get(style,'AlteHaasGroteskBold.ttf'))
+    class MixedFont:
+        # Preserve German title text when the demo lacks individual glyphs.
+        def __init__(self,size):
+            self.main=ImageFont.truetype(str(path),size)
+            fallback_path=str(TOOLS/'fonts'/'AlteHaasGroteskBold.ttf')
+            reference=ImageFont.truetype(fallback_path,size)
+            main_cap=self.main.getbbox('H',anchor='ls')
+            fallback_cap=reference.getbbox('H',anchor='ls')
+            ratio=(main_cap[3]-main_cap[1])/(fallback_cap[3]-fallback_cap[1])
+            self.fallback=ImageFont.truetype(fallback_path,round(size*ratio))
+            self.missing=bytes(self.main.getmask('\U0010ffff'))
+        def face(self,c):
+            return self.fallback if bytes(self.main.getmask(c))==self.missing else self.main
+        def getlength(self,text):
+            return sum(self.face(c).getlength(c) for c in text)
+        def getbbox(self,text,stroke_width=0):
+            boxes=[];x=0
+            for c in text:
+                f=self.face(c);l,t,r,b=f.getbbox(c,anchor='ls',stroke_width=stroke_width)
+                boxes.append((x+l,t,x+r,b));x+=f.getlength(c)
+            return (math.floor(min(b[0] for b in boxes)),min(b[1] for b in boxes),math.ceil(max(b[2] for b in boxes)),max(b[3] for b in boxes))
+        def draw(self,draw,xy,text,stroke):
+            x,y=xy
+            for c in text:
+                f=self.face(c)
+                draw.text((x,y),c,font=f,anchor='ls',fill=255,stroke_width=stroke,stroke_fill=255)
+                x+=f.getlength(c)
+    def layout(size):
+        font = MixedFont(size) if style=='blurred_key_quali' else ImageFont.truetype(str(path),size)
+        stroke = max(1,round(size*.025)) if style == 'blurred_key_quali' else 0
+        lines=[]
+        for paragraph in job['title'].splitlines():
+            line=''
+            for word in paragraph.split():
+                candidate=(line+' '+word).strip()
+                if font.getlength(candidate)+2*stroke>900 and line:
+                    lines.append(line);line=word
+                else:line=candidate
+            if line:lines.append(line)
+        boxes=[font.getbbox(line,stroke_width=stroke) for line in lines]
+        height=sum(box[3]-box[1] for box in boxes)+max(0,len(lines)-1)*16
+        fits=bool(lines) and all(box[2]-box[0]<=900 for box in boxes)
+        return font,stroke,lines,boxes,height,fits
+    size=46 if style=='snapchat' else 76
+    if style=='blurred_key_quali':
+        # Fixed 900x220 upper title area; preserve letter proportions, never stretch.
+        for size in range(400,19,-1):
+            font,stroke,lines,boxes,height,fits=layout(size)
+            if fits and height<=220:break
+        else:raise ValueError('Title cannot fit in the fixed upper title area')
+    else:
+        font,stroke,lines,boxes,height,fits=layout(size)
+        if not fits or height>600:
+            raise ValueError('Title too long: shorten it; fixed font size is not reduced')
+    title=Image.new('RGBA',(1080,1920))
+    draw=ImageDraw.Draw(title)
+    y=270
+    if style=='snapchat':
+        draw.rectangle((0,y-36,1079,y+height+36),fill=(70,70,70,170))
+    mask=Image.new('L',title.size)
+    ink=ImageDraw.Draw(mask)
+    for line,box in zip(lines,boxes):
+        left,top,right,bottom=box
+        width,h=right-left,bottom-top
+        x=(1080-width)//2
+        if style=='max_readable':
+            draw.rounded_rectangle((x-14,y-9,x+width+14,y+h+9),radius=9,fill='white')
+        if style=='blurred_key_quali':
+            font.draw(ink,(x-left,y-top),line,stroke)
+        else:
+            draw.text((x-left,y-top),line,font=font,fill='white' if style=='snapchat' else 'black')
+        y+=h+16
+    if style=='blurred_key_quali':
+        shadow=Image.new('L',title.size)
+        shadow.paste(mask,(2,5))
+        shadow=shadow.filter(ImageFilter.MaxFilter(2*math.ceil(size*.035)+1))
+        shadow=shadow.filter(ImageFilter.GaussianBlur(size*.10)).point(lambda x:round(x*.75))
+        dark=Image.new('RGBA',title.size,(0,0,0,0));dark.putalpha(shadow)
+        light=Image.new('RGBA',title.size,(255,255,255,0))
+        light.putalpha(mask.filter(ImageFilter.GaussianBlur(size*.025)))
+        title=Image.alpha_composite(dark,light)
+    title.save(work/'title.png')
+    save(work/'title-layout.json',dict(style=style,font_size=size,lines=lines,
+         ink_height=height,top=270,max_width=900,blur_radius=size*.025 if style=='blurred_key_quali' else 0))
+
 
 
 def video_filter(capture, rotate=0):
@@ -251,9 +422,14 @@ def add_broll(job, work, base, length):
 
 
 def render(job, work):
+    zoom_gate(job)
+    title_gate(job)
     p = read(work / 'plan.json')
     if not p['reviewed'] or p['job'] != job:
         raise ValueError('Review current plan first; changed job requires replanning')
+    events = zoom_timeline(job,p['segments'])
+    if events != p.get('zooms',[]):
+        raise ValueError('Zoom timeline changed: replan and review')
     for s in p['segments']:
         if not 0 <= s['source'] < len(job['sources']) or not 0 <= s['start'] < s['end']:
             raise ValueError('Invalid edit interval')
@@ -287,6 +463,11 @@ def render(job, work):
         (work/'visuals.txt').write_text(''.join(f"file '{x}'\n" for x in visual_parts),encoding='utf-8')
         ff(['-f','concat','-safe','0','-i','visuals.txt','-i','clean.mkv','-map','0:v','-map','1:a','-c','copy','-shortest','base.mkv'],work)
         base = 'base.mkv'
+    if events:
+        ff(['-i',base,'-vf',zoom_filter(events),'-c:v','libx264','-crf','18','-preset','fast',
+            '-pix_fmt','yuv420p','-c:a','copy','zoom-base.mkv'],work)
+        base = 'zoom-base.mkv'
+        zoom_audio(events,work,p['duration'])
     base = add_broll(job,work,base,p['duration'])
     # Measure speech once, then apply measured loudness normalization.
     measured = ff(['-i',base,'-vn','-af','loudnorm=I=-16:TP=-2:LRA=11:print_format=json','-f','null','-'],work)
@@ -298,14 +479,21 @@ def render(job, work):
     ff(['-i',base,'-vn','-af',f'apad=pad_dur=3,{norm},atrim=duration={p["duration"]}', '-c:a','pcm_s16le','-ar','48000','speech-normalized.wav'],work)
     args = ['-i',base,'-i','speech-normalized.wav']
     graph = '[1:a]anull[speech];'
+    mix = '[speech]'
+    count = 1
     if job.get('music'):
         music_start = float(job.get('music_start',30))
         if not 0 <= music_start < duration(media(job['music'])):
             raise ValueError('Music start must be within the selected track; set music_start for short tracks.')
         args += ['-stream_loop','-1','-ss',music_start,'-i',media(job['music'])]
-        graph += f"[2:a]volume={float(job.get('music_db',-20))}dB[music];[speech][music]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.794:level=false:latency=true[a]"
-    else:
-        graph += '[speech]alimiter=limit=0.794:level=false:latency=true[a]'
+        graph += f"[2:a]volume={float(job.get('music_db',-20))}dB[music];"
+        mix += '[music]'
+        count += 1
+    if events:
+        args += ['-i','zoom-sfx.wav']
+        mix += f'[{3 if job.get("music") else 2}:a]'
+        count += 1
+    graph += mix+(f'amix=inputs={count}:duration=first:normalize=0,' if count>1 else '')+'alimiter=limit=0.794:level=false:latency=true[a]'
     args += ['-filter_complex',graph,'-map','0:v:0','-map','[a]']
     if job.get('captions') or job.get('title'):
         captions({'title_duration':p['duration'], **job},p['words'],work)

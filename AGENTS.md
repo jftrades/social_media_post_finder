@@ -2,7 +2,7 @@
 
 ## Scope
 
-- Bei „Video schneiden“ zuerst `skills/video_editing/ideas-by-ferdi-video-editor/SKILL.md` verwenden. Vor Transkription oder Schnitt die sieben Pflichtfragen beantworten lassen. General-, Multi-Video- und Voice-over-Skill teilen sich dessen lokales Tooling.
+- Bei „Video schneiden“ zuerst `skills/video_editing/ideas-by-ferdi-video-editor/SKILL.md` verwenden. Vor Transkription oder Schnitt die sieben Pflichtfragen und bei Sprechvideos zusätzlich Frage 8 (Pointe-Zooms Ja/Nein) sowie bei gewünschtem Titel Frage 9 (Titelstil) beantworten lassen. General-, Multi-Video- und Voice-over-Skill teilen sich dessen lokales Tooling.
 
 - Für aktuelle öffentliche Fitness-Trends, Formate, Challenges und nachweislich verwendete virale Hooks den Workflow aus `skills/social-media-research/SKILL.md` verwenden.
 - Für Hooks, Skripte, Story-Arcs und Drehstrukturen den Workflow aus `skills/ideas-by-ferdi-storytelling/SKILL.md` verwenden.
