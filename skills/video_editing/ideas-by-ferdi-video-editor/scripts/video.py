@@ -60,12 +60,22 @@ def duration(path):
 
 
 def gate(job):
-    if job.get('intake_confirmed') is not True or not all(job.get('intake', {}).get(k) for k in ('cleanup', 'clips', 'captions', 'music', 'title', 'broll', 'capture')):
-        raise ValueError('First ask and receive all seven intake answers. No editing before intake.')
+    if job.get('intake_confirmed') is not True or job.get('intake_completed_levels') != [1,2,3] or not all(job.get('intake', {}).get(k) for k in ('format', 'cleanup', 'clips', 'captions', 'music', 'title', 'broll', 'capture', 'audio_normalization', 'zooms')):
+        raise ValueError('Complete intake levels 1, 2 and 3 in order before editing.')
+    if job['intake']['audio_normalization'] not in ('ja','nein') or job.get('audio_normalize') is not (job['intake']['audio_normalization']=='ja'):
+        raise ValueError('Audio normalization needs an explicit matching yes/no answer.')
+    if job.get('title') and (not isinstance(job.get('title_duration'),(int,float)) or not math.isfinite(job['title_duration']) or job['title_duration'] <= 0):
+        raise ValueError('Ask title duration in seconds.')
+    if job.get('segment_overrides'):
+        raise ValueError('Segment exceptions need an explicitly adapted render plan; do not silently apply global defaults.')
+    if job.get('mode') == 'voiceover':
+        if not all(job['intake'].get(k) for k in ('visual_timing','retiming')) or not isinstance(job.get('strict_visual_timing'),bool):
+            raise ValueError('Complete voice-over timing and retiming questions.')
     zoom_gate(job)
     title_gate(job)
-    if job.get('capture') not in ('phone', 'camera'):
-        raise ValueError('Choose phone or camera capture.')
+    cutout_gate(job)
+    if job.get('capture') not in ('phone', 'camera', 'graded'):
+        raise ValueError('Choose phone, camera or graded capture.')
     if job.get('broll_mode') not in ('none', 'specific', 'selected', 'auto'):
         raise ValueError('Choose a B-roll mode.')
     if job.get('broll_mode') == 'none' and job.get('broll'):
@@ -161,12 +171,10 @@ def plan(job, work):
 
 
 def zoom_gate(job):
-    if job['mode'] in ('single','multi'):
+    if job['mode'] in ('single','multi','voiceover'):
         answer = job.get('intake', {}).get('zooms')
         if answer not in ('ja','nein') or job.get('zoom_enabled') is not (answer == 'ja'):
-            raise ValueError('Ask question 8: zooms ja/nein; set zoom_enabled to match.')
-    elif job.get('zoom_enabled') or job.get('zooms'):
-        raise ValueError('Pointe zooms are not available for voice-over')
+            raise ValueError('Ask level 2 effects: zooms ja/nein; set zoom_enabled to match.')
     if job.get('zooms') and job.get('zoom_enabled') is not True:
         raise ValueError('Zooms need explicit opt-in')
     for z in job.get('zooms', []):
@@ -196,6 +204,18 @@ def zoom_timeline(job, segments):
         else:
             raise ValueError('Zoom breath must connect to its kept spoken passage')
     events.sort(key=lambda z:z['start'])
+    if job['mode'] == 'voiceover' and events:
+        boundaries=[]
+        total=0
+        for visual in job.get('visuals',[]):
+            total+=(visual['end']-visual['start'])/visual.get('speed',1)
+            boundaries.append(total)
+        for event in events:
+            boundary=next((t for t in boundaries if t > event['start']+1e-5),None)
+            if boundary is None or event['end'] > boundary+1e-5:
+                raise ValueError('Voice-over zoom must fit within one visual; complete visuals before planning zooms.')
+            event['reset']=min(event['reset'],boundary)
+            event['out_duration']=min(event['out_duration'],boundary-event['reset'])
     previous_end = 0
     for z in events:
         if z['start'] < previous_end-.00001:
@@ -258,7 +278,7 @@ def captions(job, words, work):
             header += f'Dialogue: {layer},{ass_time(start)},{ass_time(end)},Default,,0,0,0,,{{{pos}{effect}}}{text}\n'
     for g in groups:
         add_text(' '.join(w['word'] for w in g), g[0]['start'], g[-1]['end'],
-                 job.get('caption_y',1240), job.get('font','Alte Haas Grotesk'),
+                 job.get('caption_y',1200), job.get('font','Alte Haas Grotesk'),
                  job.get('font_size',58), 1, -1)
     if job.get('title'):
         title_image(job, work)
@@ -273,11 +293,38 @@ def title_gate(job):
     style = job.get('title_style', 'max_readable')
     if style not in TITLE_STYLES:
         raise ValueError('Unknown title style')
-    if job.get('title') and job['mode'] in ('single','multi'):
+    if job.get('title'):
         if job.get('intake',{}).get('title_style') != style:
             raise ValueError('Ask title style: Snapchat / Max-Readable / Blurred-key-quali')
-    if job['mode'] == 'voiceover' and style != 'max_readable':
-        raise ValueError('New title styles are limited to talking-head formats')
+
+
+def cutout_gate(job):
+    enabled=job.get('title_behind_person',False)
+    if not isinstance(enabled,bool):
+        raise ValueError('title_behind_person must be true or false')
+    if job.get('title') and job['mode'] in ('single','multi'):
+        answer=job.get('intake',{}).get('cutout')
+        if answer not in ('ja','nein') or enabled is not (answer=='ja'):
+            raise ValueError('Ask level 3: title behind person ja/nein')
+    elif enabled:
+        raise ValueError('Title cutout requires a title and single/multi talking-head footage')
+
+
+def visual_filter(job,plan):
+    """Keep captions above both the title and person; only picture layers are zoomed."""
+    if not job.get('title'):
+        return 'ass=captions.ass:fontsdir=fonts'
+    end=float(job.get('title_duration',plan['duration']))
+    if not math.isfinite(end) or end<=0:
+        raise ValueError('Title duration must be positive and finite')
+    if job.get('title_behind_person'):
+        return ("split=2[background][person];movie=title.png[title];"
+                f"[background][title]overlay=eof_action=repeat:enable='lt(t,{end})'[titled];"
+                "movie=cutout-alpha.mkv,format=gray[alpha];"
+                "[person][alpha]alphamerge[foreground];"
+                "[titled][foreground]overlay=shortest=1,ass=captions.ass:fontsdir=fonts")
+    return (f"movie=title.png[title];[in][title]overlay=eof_action=repeat:enable='lt(t,{end})',"
+            'ass=captions.ass:fontsdir=fonts')
 
 
 def title_image(job, work):
@@ -373,11 +420,21 @@ def title_image(job, work):
 
 
 
+def visual_timing(visual, original_duration, strict):
+    start,end,speed=visual['start'],visual['end'],visual.get('speed',1)
+    if not all(isinstance(x,(int,float)) and math.isfinite(x) for x in (start,end,speed)) or speed < 1 or not 0 <= start < end <= original_duration+.001:
+        raise ValueError('Invalid visual range or speed-up; source must contain the full interval.')
+    length=(end-start)/speed
+    if strict and (abs(start-original_duration*2/3)>.001 or abs(length-2.5)>.001):
+        raise ValueError('Strict visuals require in-point at 2/3 and exactly 2.5 seconds after retiming.')
+    return length
+
+
 def video_filter(capture, rotate=0):
     geometry = 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30'
     if rotate in (90, -90):
         geometry = ('transpose=clock,' if rotate == 90 else 'transpose=cclock,') + geometry
-    if capture == 'phone':
+    if capture in ('phone','graded'):
         return f'[0:v]{geometry}[v]'
     if capture != 'camera':
         raise ValueError('Capture must be phone or camera')
@@ -424,6 +481,7 @@ def add_broll(job, work, base, length):
 def render(job, work):
     zoom_gate(job)
     title_gate(job)
+    cutout_gate(job)
     p = read(work / 'plan.json')
     if not p['reviewed'] or p['job'] != job:
         raise ValueError('Review current plan first; changed job requires replanning')
@@ -451,14 +509,19 @@ def render(job, work):
     base = 'clean.mkv'
     if job['mode'] == 'voiceover':
         visuals = job.get('visuals', [])
-        if sum(v['end']-v['start'] for v in visuals) < p['duration']-.02:
+        lengths=[visual_timing(v,duration(media(v['path'])),job.get('strict_visual_timing',False)) for v in visuals]
+        if sum(lengths) < p['duration']-.02:
             raise ValueError('B-roll does not cover the voice-over')
+        if job.get('strict_visual_timing') and abs(sum(lengths)-p['duration'])>.001:
+            raise ValueError('Voice duration does not fit the exact 2.5-second grid; ask for an explicit timing exception.')
         visual_parts = []
         for n,v in enumerate(visuals):
             if not 0 <= v['start'] < v['end'] <= duration(media(v['path']))+.02:
                 raise ValueError('Invalid B-roll range')
             name = f'visual{n:04}.mkv'
-            ff(['-ss',v['start'],'-i',media(v['path']),'-t',v['end']-v['start'],'-an','-filter_complex',video_filter(v.get('capture','phone'),v.get('rotate',0)),'-map','[v]','-c:v','libx264','-preset','fast','-crf','18','-pix_fmt','yuv420p',name],work)
+            graph=video_filter(v.get('capture',job['capture']),v.get('rotate',0))
+            graph+=f";[v]setpts=(PTS-STARTPTS)/{v.get('speed',1)},fps=30[retimed]"
+            ff(['-ss',v['start'],'-i',media(v['path']),'-t',lengths[n],'-an','-filter_complex',graph,'-map','[retimed]','-c:v','libx264','-preset','fast','-crf','18','-pix_fmt','yuv420p',name],work)
             visual_parts.append(name)
         (work/'visuals.txt').write_text(''.join(f"file '{x}'\n" for x in visual_parts),encoding='utf-8')
         ff(['-f','concat','-safe','0','-i','visuals.txt','-i','clean.mkv','-map','0:v','-map','1:a','-c','copy','-shortest','base.mkv'],work)
@@ -469,13 +532,18 @@ def render(job, work):
         base = 'zoom-base.mkv'
         zoom_audio(events,work,p['duration'])
     base = add_broll(job,work,base,p['duration'])
+    if job.get('title_behind_person'):
+        run(['uv','run',Path(__file__).with_name('cutout.py'),work/base,work/'plan.json'])
     # Measure speech once, then apply measured loudness normalization.
-    measured = ff(['-i',base,'-vn','-af','loudnorm=I=-16:TP=-2:LRA=11:print_format=json','-f','null','-'],work)
-    match = re.findall(r'\{\s*"input_i".*?\}',measured,re.S)
-    m = json.loads(match[-1])
-    if not all(math.isfinite(float(m[k])) for k in ('input_i','input_tp','input_lra','input_thresh','target_offset')):
-        raise ValueError('Speech is silent or cannot be normalized')
-    norm = f"loudnorm=I=-16:TP=-2:LRA=11:measured_I={m['input_i']}:measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true"
+    m = {'enabled':False}
+    norm = 'anull'
+    if job.get('audio_normalize',True):
+        measured = ff(['-i',base,'-vn','-af','loudnorm=I=-16:TP=-2:LRA=11:print_format=json','-f','null','-'],work)
+        match = re.findall(r'\{\s*"input_i".*?\}',measured,re.S)
+        m = json.loads(match[-1])
+        if not all(math.isfinite(float(m[k])) for k in ('input_i','input_tp','input_lra','input_thresh','target_offset')):
+            raise ValueError('Speech is silent or cannot be normalized')
+        norm = f"loudnorm=I=-16:TP=-2:LRA=11:measured_I={m['input_i']}:measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true"
     ff(['-i',base,'-vn','-af',f'apad=pad_dur=3,{norm},atrim=duration={p["duration"]}', '-c:a','pcm_s16le','-ar','48000','speech-normalized.wav'],work)
     args = ['-i',base,'-i','speech-normalized.wav']
     graph = '[1:a]anull[speech];'
@@ -502,13 +570,7 @@ def render(job, work):
         for f in (TOOLS/'fonts').glob('*'):
             if f.suffix.lower() in ('.ttf','.otf'):
                 shutil.copy2(f,fontdir/f.name)
-        visual = 'ass=captions.ass:fontsdir=fonts'
-        if job.get('title'):
-            title_end = float(job.get('title_duration', p['duration']))
-            if not math.isfinite(title_end) or title_end <= 0:
-                raise ValueError('Title duration must be positive and finite')
-            visual += f"[sub];movie=title.png[title];[sub][title]overlay=eof_action=repeat:enable='lt(t,{title_end})'"
-        args += ['-vf',visual]
+        args += ['-vf',visual_filter(job,p)]
     log = ff(args+['-c:v','libx264','-crf','18','-preset','fast','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-ar','48000','-movflags','+faststart','-t',p['duration'],'final.mp4'],work)
     (work/'render.log').write_text(log,encoding='utf-8')
     ff(['-v','error','-i','final.mp4','-f','null','-'],work)

@@ -26,7 +26,11 @@ class ZoomTests(unittest.TestCase):
                      zooms=[dict(source=0,start=.8,end=1.4,reset=2.0,out_duration=.2,reason='first point'),
                             dict(source=0,start=2.4,end=2.8,reset=4.0,reason='second point')])
         cls.job['title_style']='max_readable'
+        cls.job.update(intake_completed_levels=[1,2,3],audio_normalize=True,title_duration=3)
+        cls.job['intake'].update(format='single',audio_normalization='ja')
         cls.job['intake']['title_style']='max_readable'
+        cls.job['intake']['cutout']='nein'
+        cls.job['title_behind_person']=False
         cls.words=[dict(word='Test',start=a,end=b) for a,b in [(0.1,.8),(1.4,2),(2.2,2.4),(2.8,3.3),(4,4.3)]]
         for i in (0,1):
             folder=cls.work/'transcripts'/str(i);folder.mkdir(parents=True)
@@ -38,6 +42,7 @@ class ZoomTests(unittest.TestCase):
                        {'intake':{k:x for k,x in self.job['intake'].items() if k!='zooms'}}):
             with self.assertRaises(ValueError):v.gate({**self.job,**change})
         vo={**self.job,'mode':'voiceover','zoom_enabled':False,'zooms':[]}
+        vo.update(strict_visual_timing=True,intake={**self.job['intake'],'zooms':'nein','visual_timing':'ja','retiming':'keine'})
         v.gate(vo)
 
     def test_plan_and_render(self):
@@ -65,11 +70,14 @@ class ZoomTests(unittest.TestCase):
         self.assertGreater(rms(.8,1.2),1)
         self.assertEqual(rms(1.5,1.8),0)
         no={**job,'zoom_enabled':False,'zooms':[],'intake':{**job['intake'],'zooms':'nein'}}
+        no['audio_normalize']=False
+        no['intake']['audio_normalization']='nein'
         v.plan(no,self.work);off=v.read(self.work/'plan.json')
         self.assertEqual(off['zooms'],[])
         self.assertLess(off['duration'],yes_duration)
         off['reviewed']=True;v.save(self.work/'plan.json',off)
         v.render(no,self.work)
+        self.assertFalse(v.read(self.work/'render-check.json')['speech_measurement']['enabled'])
 
     def test_multi_and_conflicts(self):
         job=copy.deepcopy(self.job);job['mode']='multi';job['sources']*=2

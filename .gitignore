@@ -36,6 +36,7 @@ Thumbs.db
 # Video editor: local libraries and heavyweight dependencies
 agent_tooling/B_Roll/
 agent_tooling/Purfview-Faster-Whisper-XXL/
+agent_tooling/RobustVideoMatting/
 
 # Video editor: intentionally versioned audio presets
 !agent_tooling/background_music/

@@ -29,7 +29,7 @@ class Titles(unittest.TestCase):
         self.assertGreater(sizes['blurred_key_quali','WTF'],sizes['blurred_key_quali',long])
         with self.assertRaises(ValueError):v.title_gate(dict(mode='single',title='WTF',intake={}))
         v.title_gate(dict(mode='single',title='',intake={}))
-        with self.assertRaises(ValueError):v.title_gate(dict(mode='voiceover',title='WTF',title_style='snapchat'))
+        v.title_gate(dict(mode='voiceover',title='WTF',title_style='snapchat',intake=dict(title_style='snapchat')))
         print('Title test samples:',work)
 
 
