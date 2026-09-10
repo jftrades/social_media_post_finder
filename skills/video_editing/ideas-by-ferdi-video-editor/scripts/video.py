@@ -1,4 +1,8 @@
-"""Small local editor. Commands: prepare, plan, render, finish. Python stdlib only."""
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["pillow==12.3.0"]
+# ///
+"""Small local editor. Commands: prepare, plan, render, finish. Run with uv."""
 import argparse
 import hashlib
 import json
@@ -48,7 +52,7 @@ def digest(path):
 
 
 def duration(path):
-    s = ff(['-i', path, '-f', 'null', '-'])
+    s = ff(['-i', path, '-t', '0', '-f', 'null', '-'])
     m = re.search(r'Duration: (\d+):(\d+):(\d+\.\d+)', s)
     if not m:
         raise ValueError(f'No duration: {path}')
@@ -56,8 +60,16 @@ def duration(path):
 
 
 def gate(job):
-    if job.get('intake_confirmed') is not True or not all(job.get('intake', {}).get(k) for k in ('cleanup', 'clips', 'captions', 'music')):
-        raise ValueError('First ask and receive all four intake answers. No editing before intake.')
+    if job.get('intake_confirmed') is not True or not all(job.get('intake', {}).get(k) for k in ('cleanup', 'clips', 'captions', 'music', 'title', 'broll', 'capture')):
+        raise ValueError('First ask and receive all seven intake answers. No editing before intake.')
+    if job.get('capture') not in ('phone', 'camera'):
+        raise ValueError('Choose phone or camera capture.')
+    if job.get('broll_mode') not in ('none', 'specific', 'selected', 'auto'):
+        raise ValueError('Choose a B-roll mode.')
+    if job.get('broll_mode') == 'none' and job.get('broll'):
+        raise ValueError('B-roll is disabled.')
+    if 'title' not in job or not isinstance(job['title'], str):
+        raise ValueError('Set title text, or an empty string for no title.')
     if not re.fullmatch(r'[\w-]+', job['project']):
         raise ValueError('Project name must contain only letters, numbers, hyphens or underscores.')
     if job['mode'] not in ('single', 'multi', 'voiceover'):
@@ -106,7 +118,7 @@ def plan(job, work):
         words = words_for(work, i)
         length = duration(media(source))
         drops = [d for d in job.get('drops', []) if d['source'] == i] if job['cleanup'] else []
-        kept = [w for w in words if not any(w['start'] < d['end'] and w['end'] > d['start'] for d in drops)]
+        kept = [w for w in words if not any(w['start'] < d['end'] and (w['end'] > d['start'] or d['start'] <= w['start'] < d['end']) for d in drops)]
         if not kept:
             continue
         intervals = []
@@ -137,17 +149,106 @@ def ass_time(t):
 
 def captions(job, words, work):
     header = '[Script Info]\nPlayResX: 1080\nPlayResY: 1920\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n'
-    header += f"Style: Default,{job.get('font', 'Alte Haas Grotesk')},{job.get('font_size',58)},&H00FFFFFF,&H00FFFFFF,&H90000000,&H90000000,-1,0,0,0,100,100,0,0,1,0,2,5,80,80,0,1\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+    header += f"Style: Default,{job.get('font', 'Alte Haas Grotesk')},{job.get('font_size',58)},&H00FFFFFF,&H00FFFFFF,&H90000000,&H90000000,-1,0,0,0,100,100,-1,0,1,0,0,5,80,80,0,1\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
     groups = []
-    for w in words:
+    for w in (words if job.get('captions') else []):
         if groups and len(groups[-1]) < 3 and len(' '.join(x['word'] for x in groups[-1])+' '+w['word']) <= 14 and w['start']-groups[-1][-1]['end'] < .3 and not re.search(r'[.!?]$', groups[-1][-1]['word']):
             groups[-1].append(w)
         else:
             groups.append([w])
+    def add_text(text, start, end, y, font, size, bold, spacing, anchor=5):
+        nonlocal header
+        text = text.replace('\\', '').replace('{', '').replace('}', '').replace('\n', r'\N')
+        common = f'\\an{anchor}\\pos(540,{y})\\fn{font}\\fs{size}\\b{bold}\\fsp{spacing}'
+        # Separate shadow layer: blurred black glyphs below sharp white text.
+        for layer, effect in ((0, r'\1c&H000000&\1a&H75&\bord1\3c&H000000&\3a&H75&\shad0\blur5'),
+                              (1, r'\1c&HFFFFFF&\1a&H00&\bord0\shad0\blur0')):
+            pos = common if layer else common.replace(f'540,{y}', f'541,{y+3}')
+            header += f'Dialogue: {layer},{ass_time(start)},{ass_time(end)},Default,,0,0,0,,{{{pos}{effect}}}{text}\n'
     for g in groups:
-        text = ' '.join(w['word'] for w in g).replace('\\','').replace('{','').replace('}','').replace('\n',' ')
-        header += f"Dialogue: 0,{ass_time(g[0]['start'])},{ass_time(g[-1]['end'])},Default,,0,0,0,,{{\\pos(540,{job.get('caption_y',1280)})\\blur1}}{text}\n"
+        add_text(' '.join(w['word'] for w in g), g[0]['start'], g[-1]['end'],
+                 job.get('caption_y',1150), job.get('font','Alte Haas Grotesk'),
+                 job.get('font_size',58), 1, -1)
+    if job.get('title'):
+        from PIL import ImageFont
+        title_font = TOOLS / 'fonts' / 'Gondens DEMO.otf'
+        font = ImageFont.truetype(str(title_font), 96)
+        family = font.getname()[0]
+        lines = []
+        for paragraph in job['title'].splitlines():
+            line = ''
+            for word in paragraph.split():
+                candidate = (line + ' ' + word).strip()
+                if font.getlength(candidate) > 780 and line:
+                    lines.append(line)
+                    line = word
+                else:
+                    line = candidate
+            if line:
+                lines.append(line)
+        if not lines or len(lines) > 3 or any(font.getlength(line) > 780 for line in lines):
+            raise ValueError('Title too long for the top card: shorten the title or split long words.')
+        width = round(max(font.getlength(line) for line in lines)) + 84
+        height = len(lines) * 116 + 48
+        x, y, radius = (1080-width)//2, 210, 26
+        path = (f'm {radius} 0 l {width-radius} 0 b {width} 0 {width} 0 {width} {radius} '
+                f'l {width} {height-radius} b {width} {height} {width} {height} {width-radius} {height} '
+                f'l {radius} {height} b 0 {height} 0 {height} 0 {height-radius} '
+                f'l 0 {radius} b 0 0 0 0 {radius} 0')
+        end = ass_time(job.get('title_duration', max((w['end'] for w in words), default=5)))
+        header += f'Dialogue: 2,0:00:00.00,{end},Default,,0,0,0,,{{\\an7\\pos({x},{y})\\p1\\fscx100\\fscy100\\bord0\\shad0\\1c&HFFFFFF&\\1a&H00&}}{path}{{\\p0}}\n'
+        for i,line in enumerate(lines):
+            safe = line.replace('\\','').replace('{','').replace('}','')
+            header += f'Dialogue: 3,0:00:00.00,{end},Default,,0,0,0,,{{\\an5\\pos(540,{y+24+58+i*116})\\fn{family}\\fs96\\b0\\fsp0\\bord0\\shad0\\blur0\\1c&H000000&\\1a&H00&}}{safe}\n'
     (work / 'captions.ass').write_text(header, encoding='utf-8')
+
+
+def video_filter(capture, rotate=0):
+    geometry = 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30'
+    if rotate in (90, -90):
+        geometry = ('transpose=clock,' if rotate == 90 else 'transpose=cclock,') + geometry
+    if capture == 'phone':
+        return f'[0:v]{geometry}[v]'
+    if capture != 'camera':
+        raise ValueError('Capture must be phone or camera')
+    return (f'[0:v]{geometry},format=gbrp,split=2[original][convert];'
+            "[convert]lut3d=file=normalize.cube[converted];"
+            "[original][converted]blend=all_expr='A*0.25+B*0.75',split=2[normalized][look];"
+            "[look]lut3d=file=look.cube[graded];"
+            "[normalized][graded]blend=all_expr='A*0.70+B*0.30',format=yuv420p[v]")
+
+
+def add_broll(job, work, base, length):
+    entries = sorted(job.get('broll', []), key=lambda v: v['at'])
+    if not entries:
+        return base
+    if job['mode'] == 'voiceover':
+        raise ValueError('For voice-over put the picture track in visuals, not broll.')
+    previous_end = 0
+    args = ['-i', base]
+    filters = []
+    current = '[0:v]'
+    for i, entry in enumerate(entries):
+        src = media(entry['path'])
+        start, end, at = entry['start'], entry['end'], entry['at']
+        if not 0 <= start < end <= duration(src)+.01 or at < previous_end or at+end-start > length+.01:
+            raise ValueError('Invalid or overlapping B-roll interval')
+        if job['broll_mode'] == 'selected' and src not in [media(p) for p in job.get('broll_allowed', [])]:
+            raise ValueError('B-roll is not among the selected files')
+        if job['broll_mode'] == 'auto' and not entry.get('match'):
+            raise ValueError('Automatic B-roll requires a documented content match.')
+        name = f'broll{i:04}.mkv'
+        ff(['-ss',start,'-i',src,'-t',end-start,'-an','-filter_complex',
+            video_filter(entry.get('capture','phone'),entry.get('rotate',0)),
+            '-map','[v]','-c:v','libx264','-preset','fast','-crf','18','-pix_fmt','yuv420p',name],work)
+        args += ['-i', name]
+        filters.append(f'[{i+1}:v]setpts=PTS-STARTPTS+{at}/TB[b{i}]')
+        filters.append(f"{current}[b{i}]overlay=eof_action=pass:enable='gte(t,{at})*lt(t,{at+end-start})'[o{i}]")
+        current = f'[o{i}]'
+        previous_end = at+end-start
+    ff(args+['-filter_complex',';'.join(filters),'-map',current,'-map','0:a',
+             '-c:v','libx264','-preset','fast','-crf','18','-pix_fmt','yuv420p','-c:a','copy','broll-base.mkv'],work)
+    return 'broll-base.mkv'
 
 
 def render(job, work):
@@ -158,15 +259,17 @@ def render(job, work):
         if not 0 <= s['source'] < len(job['sources']) or not 0 <= s['start'] < s['end']:
             raise ValueError('Invalid edit interval')
     parts = []
-    geometry = 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30'
+    shutil.copy2(TOOLS/'LUTs'/'CINELIKE D to REC 709_26.P1003055.cube', work/'normalize.cube')
+    shutil.copy2(TOOLS/'LUTs'/'MERRY_MEN_II.cube', work/'look.cube')
     for n, s in enumerate(p['segments']):
         part = work / f'part{n:04}.mkv'
         args = ['-ss', s['start'], '-i', media(job['sources'][s['source']]), '-t', s['end']-s['start']]
         if job['mode'] == 'voiceover':
             args += ['-vn']
         else:
-            args += ['-vf', geometry, '-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-pix_fmt', 'yuv420p']
-        ff(args + ['-map', '0:a:0', *([] if job['mode']=='voiceover' else ['-map','0:v:0']), '-c:a', 'pcm_s16le', '-ar','48000','-ac','2',part])
+            capture = job.get('source_captures', [job['capture']]*len(job['sources']))[s['source']]
+            args += ['-filter_complex', video_filter(capture,job.get('rotate',0)), '-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-pix_fmt', 'yuv420p']
+        ff(args + ['-map', '0:a:0', *([] if job['mode']=='voiceover' else ['-map','[v]']), '-c:a', 'pcm_s16le', '-ar','48000','-ac','2',part],work)
         parts.append(part.name)
     (work / 'concat.txt').write_text(''.join(f"file '{x}'\n" for x in parts), encoding='utf-8')
     ff(['-f','concat','-safe','0','-i','concat.txt','-c','copy','clean.mkv'],work)
@@ -180,11 +283,12 @@ def render(job, work):
             if not 0 <= v['start'] < v['end'] <= duration(media(v['path']))+.02:
                 raise ValueError('Invalid B-roll range')
             name = f'visual{n:04}.mkv'
-            ff(['-ss',v['start'],'-i',media(v['path']),'-t',v['end']-v['start'],'-an','-vf',geometry,'-c:v','libx264','-preset','fast','-crf','18','-pix_fmt','yuv420p',name],work)
+            ff(['-ss',v['start'],'-i',media(v['path']),'-t',v['end']-v['start'],'-an','-filter_complex',video_filter(v.get('capture','phone'),v.get('rotate',0)),'-map','[v]','-c:v','libx264','-preset','fast','-crf','18','-pix_fmt','yuv420p',name],work)
             visual_parts.append(name)
         (work/'visuals.txt').write_text(''.join(f"file '{x}'\n" for x in visual_parts),encoding='utf-8')
         ff(['-f','concat','-safe','0','-i','visuals.txt','-i','clean.mkv','-map','0:v','-map','1:a','-c','copy','-shortest','base.mkv'],work)
         base = 'base.mkv'
+    base = add_broll(job,work,base,p['duration'])
     # Measure speech once, then apply measured loudness normalization.
     measured = ff(['-i',base,'-vn','-af','loudnorm=I=-16:TP=-2:LRA=11:print_format=json','-f','null','-'],work)
     match = re.findall(r'\{\s*"input_i".*?\}',measured,re.S)
@@ -196,13 +300,16 @@ def render(job, work):
     args = ['-i',base,'-i','speech-normalized.wav']
     graph = '[1:a]anull[speech];'
     if job.get('music'):
-        args += ['-stream_loop','-1','-i',media(job['music'])]
+        music_start = float(job.get('music_start',30))
+        if not 0 <= music_start < duration(media(job['music'])):
+            raise ValueError('Music start must be within the selected track; set music_start for short tracks.')
+        args += ['-stream_loop','-1','-ss',music_start,'-i',media(job['music'])]
         graph += f"[2:a]volume={float(job.get('music_db',-20))}dB[music];[speech][music]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.794:level=false:latency=true[a]"
     else:
         graph += '[speech]alimiter=limit=0.794:level=false:latency=true[a]'
     args += ['-filter_complex',graph,'-map','0:v:0','-map','[a]']
-    if job.get('captions'):
-        captions(job,p['words'],work)
+    if job.get('captions') or job.get('title'):
+        captions({'title_duration':p['duration'], **job},p['words'],work)
         fontdir = work / 'fonts'
         fontdir.mkdir(exist_ok=True)
         for f in (TOOLS/'fonts').glob('*'):
@@ -235,7 +342,7 @@ def finish(job, work):
     dest.mkdir(parents=True,exist_ok=False)
     originals = dest/'originals'
     originals.mkdir()
-    paths = list(dict.fromkeys(job['sources']+[v['path'] for v in job.get('visuals',[])]))
+    paths = list(dict.fromkeys(job['sources']+[v['path'] for v in job.get('visuals',[])+job.get('broll',[])]))
     manifest=[]
     for i,path in enumerate(paths):
         src=media(path)

@@ -20,22 +20,22 @@ Der minimale lokale Workflow deckt drei Fälle ab:
 2. Mehrere Kamera- oder Positionswechsel entlang eines Skripts.
 3. Talking Head plus gezielt ausgewählte B-Roll aus einer großen lokalen Bibliothek.
 
-Vor dem Editing vier Antworten abwarten: Pausen/Retakes kürzen (letzte Alternative behalten)? Clip-Art und Dateinamen/Reihenfolge? Standard-Untertitel oder Änderungen/keine? Standardmusik oder anderer Song/keine?
+Vor dem Editing sieben Antworten abwarten: Pausen/Retakes kürzen (letzte Alternative behalten)? Clip-Art und Dateinamen/Reihenfolge? Standard-Untertitel oder Änderungen/keine? Standardmusik oder anderer Song/keine? Titel und Wortlaut? B-Roll-Modus und Einschränkungen? Handy oder Kamera?
 
-Defaults: Purfview Faster Whisper **Medium**, Deutsch, ohne API-Key. Alte Haas Grotesk Bold, weiß mit sanftem Schatten, kurze Caption-Blöcke, y=1280 bei 1080×1920 (ein Drittel von unten). **Phrygian_Drift_2026-09-04T124142.mp3 mit −20 dB Gain**. Stimme auf −16 LUFS mit −2 dBTP Ziel anpassen, Master-Limiter gegen Übersteuerung. Schon verzerrtes Audio wird dadurch nicht repariert.
+Defaults: Purfview Faster Whisper **Medium**, Deutsch, ohne API-Key. Alte Haas Grotesk Bold, weiß mit dezentem, weichgezeichnetem Schatten; fett und Buchstabenabstand −1, kurze Caption-Blöcke, y=1150 bei 1080×1920. **Phrygian_Drift_2026-09-04T124142.mp3 mit −20 dB Gain, ab 0:30**. Stimme auf −16 LUFS mit −2 dBTP Ziel anpassen, Master-Limiter gegen Übersteuerung. Schon verzerrtes Audio wird dadurch nicht repariert.
 
 Der Agent prüft Retakes anhand von Wortzeiten und Audio und erstellt den Schnittplan; bedeutungsvolle Wiederholungen bleiben erhalten. Whisper kann Versprecher auslassen. Subtitle-Edit-GUI-Postprocessing wird nicht direkt übernommen. Das lokale Tool baut kurze Captions aus Purfview-Wortzeiten.
 
 Originale unter `project_videos/unfinished_projects/<projekt>/`, temporäre Dateien unter `project_videos/work/<projekt>/`. Nach Render-Prüfung werden nur verwendete Quellen hashgeprüft nach `project_videos/finished_projects/<projekt>/originals/` kopiert, zusammen mit `final.mp4` und Plan. Erst danach werden die ausgewählten Eingangsdateien aus `project_videos/unfinished_projects/` entfernt. Externe Quellen und B-Roll-Bibliotheken bleiben erhalten; bestehende fertige Projekte werden nicht überschrieben. Alle drei Projektordner sind ignoriert.
 
-Tooling: Python 3.11+ (Standardbibliothek), lokale Purfview-Installation inklusive `_models/faster-whisper-medium` und gebündeltem FFmpeg. Nach Clone lokal bereitstellen. [Workflow und Jobvorlage](skills/video_editing/ideas-by-ferdi-video-editor/references/workflow.md) beschreiben `prepare`, `plan`, `render`, `finish`. Auto-Cutout/RVM, Zooms, LUT-Anwendung und zusätzliche Effekte folgen später.
+Tooling: uv mit Python 3.11+ und Pillow (automatisch über Script-Metadaten installiert), lokale Purfview-Installation inklusive `_models/faster-whisper-medium` und gebündeltem FFmpeg. Nach Clone lokal bereitstellen. [Workflow und Jobvorlage](skills/video_editing/ideas-by-ferdi-video-editor/references/workflow.md) beschreiben `prepare`, `plan`, `render`, `finish`. Auto-Cutout/RVM und Zooms folgen später. Handy bleibt ohne LUT; Kamera erhält zuerst CINELIKE D to REC 709_26.P1003055 mit 75 %, danach MERRY_MEN_II mit 30 %.
 
 `agent_tooling/` enthält die kleinen, gemeinsam versionierten Audio-Presets:
 
 - `background_music/`: wenige wiederverwendbare Musikbetten.
 - `sound_fx/`: kurze Effekte wie Whoosh, Pop, Click oder Shutter.
-- `fonts/`: drei Schriftdateien, Standard Alte Haas Grotesk Bold.
-- `LUTs/`: zwei LUTs für spätere Erweiterungen.
+- `fonts/`: Schriftdateien, Untertitel-Standard Alte Haas Grotesk Bold, Titel-Standard Gondens DEMO.
+- `LUTs/`: zwei LUTs für den Kamera-Standard.
 
 Folgende Inhalte bleiben bewusst lokal und werden nicht in Git aufgenommen:
 
@@ -82,3 +82,5 @@ Hilf mir aus diesen Notizen eine persönliche 45-Sekunden-Story zu bauen.
 Research trends running der letzten 7 Tage.
 Research hooks hybrid athlete.
 ```
+
+Fünfte Intake-Frage: Titel oben ja/nein und genauer Wortlaut. Standard: Gondens DEMO 96 px, schwarz auf weißem Hintergrund mit abgerundeten Ecken, über die gesamte Videolänge. Musik startet künftig standardmäßig bei Sekunde 30. Schatten und Text werden separat gerendert, damit die Schrift trotz weichem Schatten scharf bleibt.
