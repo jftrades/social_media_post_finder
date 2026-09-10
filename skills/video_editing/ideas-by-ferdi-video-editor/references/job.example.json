@@ -1,0 +1,17 @@
+{
+  "project": "mein-video",
+  "intake": {"cleanup": "", "clips": "", "captions": "", "music": ""},
+  "intake_confirmed": false,
+  "mode": "single",
+  "sources": ["project_videos/unfinished_projects/mein-video/aufnahme.mp4"],
+  "cleanup": true,
+  "captions": true,
+  "font": "Alte Haas Grotesk",
+  "font_size": 58,
+  "caption_y": 1280,
+  "music": "agent_tooling/background_music/Phrygian_Drift_2026-09-04T124142.mp3",
+  "music_db": -20,
+  "drops": [],
+  "visuals": [],
+  "qa_approved": false
+}

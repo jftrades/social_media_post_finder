@@ -1,0 +1,268 @@
+"""Small local editor. Commands: prepare, plan, render, finish. Python stdlib only."""
+import argparse
+import hashlib
+import json
+import math
+from pathlib import Path
+import re
+import shutil
+import subprocess
+
+ROOT = Path(__file__).resolve().parents[4]
+PROJECTS = ROOT / 'project_videos'
+TOOLS = ROOT / 'agent_tooling'
+WHISPER = TOOLS / 'Purfview-Faster-Whisper-XXL'
+FF = WHISPER / 'ffmpeg.exe'
+
+
+def read(path):
+    return json.loads(Path(path).read_text(encoding='utf-8-sig'))
+
+
+def save(path, value):
+    Path(path).write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding='utf-8')
+
+
+def run(args, cwd=None):
+    p = subprocess.run([str(x) for x in args], cwd=cwd, capture_output=True, text=True, encoding='utf-8', errors='replace')
+    if p.returncode:
+        raise RuntimeError(p.stderr[-6000:] or p.stdout[-6000:])
+    return p.stderr + p.stdout
+
+
+def ff(args, cwd=None):
+    return run([FF, '-hide_banner', '-y', *args], cwd)
+
+
+def media(value):
+    p = Path(value)
+    p = (ROOT / p).resolve() if not p.is_absolute() else p.resolve()
+    if not p.is_file():
+        raise ValueError(f'Missing media: {p}')
+    return p
+
+
+def digest(path):
+    with Path(path).open('rb') as f:
+        return hashlib.file_digest(f, 'sha256').hexdigest()
+
+
+def duration(path):
+    s = ff(['-i', path, '-f', 'null', '-'])
+    m = re.search(r'Duration: (\d+):(\d+):(\d+\.\d+)', s)
+    if not m:
+        raise ValueError(f'No duration: {path}')
+    return int(m[1])*3600 + int(m[2])*60 + float(m[3])
+
+
+def gate(job):
+    if job.get('intake_confirmed') is not True or not all(job.get('intake', {}).get(k) for k in ('cleanup', 'clips', 'captions', 'music')):
+        raise ValueError('First ask and receive all four intake answers. No editing before intake.')
+    if not re.fullmatch(r'[\w-]+', job['project']):
+        raise ValueError('Project name must contain only letters, numbers, hyphens or underscores.')
+    if job['mode'] not in ('single', 'multi', 'voiceover'):
+        raise ValueError('Invalid mode')
+    if not job['sources'] or (job['mode'] == 'single' and len(job['sources']) != 1):
+        raise ValueError('Invalid source count')
+
+
+def prepare(job, work):
+    target = work / 'transcripts'
+    target.mkdir(exist_ok=True)
+    for i, source in enumerate(job['sources']):
+        src = media(source)
+        folder = target / str(i)
+        folder.mkdir(exist_ok=True)
+        stamp = {'source': str(src), 'sha256': digest(src), 'model': 'medium', 'language': 'de'}
+        cache = folder / 'source.json'
+        if cache.exists() and read(cache) == stamp and (folder / 'speech.json').exists():
+            continue
+        wav = folder / 'speech.wav'
+        ff(['-i', src, '-vn', '-ac', '1', '-ar', '16000', wav])
+        run([WHISPER / 'faster-whisper-xxl.exe', wav, '--model', 'medium', '--model_dir', WHISPER / '_models',
+             '--language', 'de', '--device', 'cpu', '--compute_type', 'int8', '--word_timestamps', 'True',
+             '--one_word', '0', '--sentence', '--max_line_width', '14', '--max_line_count', '1',
+             '--output_dir', folder, '--output_format', 'json', 'srt'])
+        if not (folder / 'speech.json').exists():
+            raise ValueError('Purfview produced no expected JSON transcript')
+        save(cache, stamp)
+
+
+def words_for(work, i):
+    data = read(work / 'transcripts' / str(i) / 'speech.json')
+    words = [dict(w) for s in data['segments'] for w in s.get('words', [])]
+    if not words:
+        raise ValueError('No word timestamps. Rerun local transcription.')
+    for w in words:
+        w['word'] = w['word'].strip()
+        if not (math.isfinite(w['start']) and math.isfinite(w['end']) and 0 <= w['start'] <= w['end']):
+            raise ValueError('Invalid word timestamp')
+    return sorted(words, key=lambda w: w['start'])
+
+
+def plan(job, work):
+    segments, output_words, offset = [], [], 0.0
+    for i, source in enumerate(job['sources']):
+        words = words_for(work, i)
+        length = duration(media(source))
+        drops = [d for d in job.get('drops', []) if d['source'] == i] if job['cleanup'] else []
+        kept = [w for w in words if not any(w['start'] < d['end'] and w['end'] > d['start'] for d in drops)]
+        if not kept:
+            continue
+        intervals = []
+        if job['cleanup']:
+            for w in kept:
+                start, end = max(0, w['start']-.06), min(length, w['end']+.10)
+                if intervals and start-intervals[-1][1] <= .29 and not any(d['start'] < start and d['end'] > intervals[-1][1] for d in drops):
+                    intervals[-1][1] = max(intervals[-1][1], end)
+                else:
+                    intervals.append([start, end])
+        else:
+            intervals = [[0, length]]
+        for start, end in intervals:
+            segments.append({'source': i, 'start': start, 'end': end})
+            for w in kept:
+                if start <= w['start'] and w['end'] <= end:
+                    output_words.append({'word': w['word'], 'start': offset+w['start']-start, 'end': offset+w['end']-start})
+            offset += end-start
+    if not segments:
+        raise ValueError('Empty edit')
+    save(work / 'plan.json', {'reviewed': False, 'job': job, 'segments': segments, 'words': output_words, 'duration': offset})
+
+
+def ass_time(t):
+    n = round(t*100)
+    return f'{n//360000}:{n//6000%60:02}:{n//100%60:02}.{n%100:02}'
+
+
+def captions(job, words, work):
+    header = '[Script Info]\nPlayResX: 1080\nPlayResY: 1920\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n'
+    header += f"Style: Default,{job.get('font', 'Alte Haas Grotesk')},{job.get('font_size',58)},&H00FFFFFF,&H00FFFFFF,&H90000000,&H90000000,-1,0,0,0,100,100,0,0,1,0,2,5,80,80,0,1\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+    groups = []
+    for w in words:
+        if groups and len(groups[-1]) < 3 and len(' '.join(x['word'] for x in groups[-1])+' '+w['word']) <= 14 and w['start']-groups[-1][-1]['end'] < .3 and not re.search(r'[.!?]$', groups[-1][-1]['word']):
+            groups[-1].append(w)
+        else:
+            groups.append([w])
+    for g in groups:
+        text = ' '.join(w['word'] for w in g).replace('\\','').replace('{','').replace('}','').replace('\n',' ')
+        header += f"Dialogue: 0,{ass_time(g[0]['start'])},{ass_time(g[-1]['end'])},Default,,0,0,0,,{{\\pos(540,{job.get('caption_y',1280)})\\blur1}}{text}\n"
+    (work / 'captions.ass').write_text(header, encoding='utf-8')
+
+
+def render(job, work):
+    p = read(work / 'plan.json')
+    if not p['reviewed'] or p['job'] != job:
+        raise ValueError('Review current plan first; changed job requires replanning')
+    for s in p['segments']:
+        if not 0 <= s['source'] < len(job['sources']) or not 0 <= s['start'] < s['end']:
+            raise ValueError('Invalid edit interval')
+    parts = []
+    geometry = 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30'
+    for n, s in enumerate(p['segments']):
+        part = work / f'part{n:04}.mkv'
+        args = ['-ss', s['start'], '-i', media(job['sources'][s['source']]), '-t', s['end']-s['start']]
+        if job['mode'] == 'voiceover':
+            args += ['-vn']
+        else:
+            args += ['-vf', geometry, '-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-pix_fmt', 'yuv420p']
+        ff(args + ['-map', '0:a:0', *([] if job['mode']=='voiceover' else ['-map','0:v:0']), '-c:a', 'pcm_s16le', '-ar','48000','-ac','2',part])
+        parts.append(part.name)
+    (work / 'concat.txt').write_text(''.join(f"file '{x}'\n" for x in parts), encoding='utf-8')
+    ff(['-f','concat','-safe','0','-i','concat.txt','-c','copy','clean.mkv'],work)
+    base = 'clean.mkv'
+    if job['mode'] == 'voiceover':
+        visuals = job.get('visuals', [])
+        if sum(v['end']-v['start'] for v in visuals) < p['duration']-.02:
+            raise ValueError('B-roll does not cover the voice-over')
+        visual_parts = []
+        for n,v in enumerate(visuals):
+            if not 0 <= v['start'] < v['end'] <= duration(media(v['path']))+.02:
+                raise ValueError('Invalid B-roll range')
+            name = f'visual{n:04}.mkv'
+            ff(['-ss',v['start'],'-i',media(v['path']),'-t',v['end']-v['start'],'-an','-vf',geometry,'-c:v','libx264','-preset','fast','-crf','18','-pix_fmt','yuv420p',name],work)
+            visual_parts.append(name)
+        (work/'visuals.txt').write_text(''.join(f"file '{x}'\n" for x in visual_parts),encoding='utf-8')
+        ff(['-f','concat','-safe','0','-i','visuals.txt','-i','clean.mkv','-map','0:v','-map','1:a','-c','copy','-shortest','base.mkv'],work)
+        base = 'base.mkv'
+    # Measure speech once, then apply measured loudness normalization.
+    measured = ff(['-i',base,'-vn','-af','loudnorm=I=-16:TP=-2:LRA=11:print_format=json','-f','null','-'],work)
+    match = re.findall(r'\{\s*"input_i".*?\}',measured,re.S)
+    m = json.loads(match[-1])
+    if not all(math.isfinite(float(m[k])) for k in ('input_i','input_tp','input_lra','input_thresh','target_offset')):
+        raise ValueError('Speech is silent or cannot be normalized')
+    norm = f"loudnorm=I=-16:TP=-2:LRA=11:measured_I={m['input_i']}:measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true"
+    ff(['-i',base,'-vn','-af',f'apad=pad_dur=3,{norm},atrim=duration={p["duration"]}', '-c:a','pcm_s16le','-ar','48000','speech-normalized.wav'],work)
+    args = ['-i',base,'-i','speech-normalized.wav']
+    graph = '[1:a]anull[speech];'
+    if job.get('music'):
+        args += ['-stream_loop','-1','-i',media(job['music'])]
+        graph += f"[2:a]volume={float(job.get('music_db',-20))}dB[music];[speech][music]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.794:level=false:latency=true[a]"
+    else:
+        graph += '[speech]alimiter=limit=0.794:level=false:latency=true[a]'
+    args += ['-filter_complex',graph,'-map','0:v:0','-map','[a]']
+    if job.get('captions'):
+        captions(job,p['words'],work)
+        fontdir = work / 'fonts'
+        fontdir.mkdir(exist_ok=True)
+        for f in (TOOLS/'fonts').glob('*'):
+            if f.suffix.lower() in ('.ttf','.otf'):
+                shutil.copy2(f,fontdir/f.name)
+        args += ['-vf','ass=captions.ass:fontsdir=fonts']
+    log = ff(args+['-c:v','libx264','-crf','18','-preset','fast','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-ar','48000','-movflags','+faststart','-t',p['duration'],'final.mp4'],work)
+    (work/'render.log').write_text(log,encoding='utf-8')
+    ff(['-v','error','-i','final.mp4','-f','null','-'],work)
+    actual = duration(work/'final.mp4')
+    if abs(actual-p['duration']) > max(.25,len(parts)/30):
+        raise ValueError('Final duration differs from plan')
+    peaks = ff(['-i','final.mp4','-vn','-af','ebur128=peak=true','-f','null','-'],work)
+    peak = re.findall(r'Peak:\s+(-?[\d.]+) dBFS',peaks)
+    if not peak or float(peak[-1]) > -1:
+        raise ValueError('Final true peak exceeds -1 dBFS or could not be measured')
+    save(work/'render-check.json',{'duration':actual,'expected':p['duration'],'true_peak_dbfs':float(peak[-1]),'sha256':digest(work/'final.mp4'),'plan_sha256':digest(work/'plan.json'),'speech_measurement':m})
+
+
+def finish(job, work):
+    if job.get('qa_approved') is not True:
+        raise ValueError('Review the actual render before archiving')
+    check = read(work/'render-check.json')
+    planned_job = read(work/'plan.json')['job']
+    if {k:v for k,v in job.items() if k != 'qa_approved'} != {k:v for k,v in planned_job.items() if k != 'qa_approved'}:
+        raise ValueError('Job changed after render')
+    if check['sha256'] != digest(work/'final.mp4') or check['plan_sha256'] != digest(work/'plan.json'):
+        raise ValueError('Render or plan changed after checks')
+    dest = PROJECTS/'finished_projects'/job['project']
+    dest.mkdir(parents=True,exist_ok=False)
+    originals = dest/'originals'
+    originals.mkdir()
+    paths = list(dict.fromkeys(job['sources']+[v['path'] for v in job.get('visuals',[])]))
+    manifest=[]
+    for i,path in enumerate(paths):
+        src=media(path)
+        target=originals/f'{i:03}_{src.name}'
+        shutil.copy2(src,target)
+        if digest(src)!=digest(target):
+            raise ValueError('Original copy checksum mismatch')
+        manifest.append({'source':str(src),'copy':str(target.relative_to(dest)),'sha256':digest(target)})
+    for name in ('final.mp4','plan.json','render-check.json'):
+        shutil.copy2(work/name,dest/name)
+    save(dest/'originals.json',manifest)
+    # Remove only the verified selected input copies inside the input area.
+    # External sources and shared B-roll libraries are always retained.
+    input_root = (PROJECTS/'unfinished_projects').resolve()
+    for entry in manifest:
+        src = Path(entry['source']).resolve()
+        archived = dest/entry['copy']
+        if src.is_relative_to(input_root) and digest(src) == entry['sha256'] == digest(archived):
+            src.unlink()
+    print(dest)
+
+
+if __name__ == '__main__':
+    parser=argparse.ArgumentParser()
+    parser.add_argument('command',choices=['prepare','plan','render','finish'])
+    parser.add_argument('job',type=Path)
+    args=parser.parse_args()
+    job=read(args.job)
+    gate(job)
+    globals()[args.command](job,args.job.resolve().parent)

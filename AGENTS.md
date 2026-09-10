@@ -2,6 +2,8 @@
 
 ## Scope
 
+- Bei „Video schneiden“ zuerst `skills/video_editing/ideas-by-ferdi-video-editor/SKILL.md` verwenden. Vor Transkription oder Schnitt die vier Pflichtfragen beantworten lassen. General-, Multi-Video- und Voice-over-Skill teilen sich dessen lokales Tooling.
+
 - Für aktuelle öffentliche Fitness-Trends, Formate, Challenges und nachweislich verwendete virale Hooks den Workflow aus `skills/social-media-research/SKILL.md` verwenden.
 - Für Hooks, Skripte, Story-Arcs und Drehstrukturen den Workflow aus `skills/ideas-by-ferdi-storytelling/SKILL.md` verwenden.
 - Der Standardscope umfasst Europa, die USA und Kanada. Andere Regionen nur nach ausdrücklicher Nutzeranfrage einbeziehen.
