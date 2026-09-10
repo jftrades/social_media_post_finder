@@ -22,7 +22,7 @@ Der minimale lokale Workflow deckt drei Fälle ab:
 
 Vor dem Editing sieben Antworten abwarten: Pausen/Retakes kürzen (letzte Alternative behalten)? Clip-Art und Dateinamen/Reihenfolge? Standard-Untertitel oder Änderungen/keine? Standardmusik oder anderer Song/keine? Titel und Wortlaut? B-Roll-Modus und Einschränkungen? Handy oder Kamera?
 
-Defaults: Purfview Faster Whisper **Medium**, Deutsch, ohne API-Key. Alte Haas Grotesk Bold, weiß mit dezentem, weichgezeichnetem Schatten; fett und Buchstabenabstand −1, kurze Caption-Blöcke, y=1150 bei 1080×1920. **Phrygian_Drift_2026-09-04T124142.mp3 mit −20 dB Gain, ab 0:30**. Stimme auf −16 LUFS mit −2 dBTP Ziel anpassen, Master-Limiter gegen Übersteuerung. Schon verzerrtes Audio wird dadurch nicht repariert.
+Defaults: Purfview Faster Whisper **Medium**, Deutsch, ohne API-Key. Alte Haas Grotesk Bold, weiß mit dezentem, weichgezeichnetem Schatten; fett und Buchstabenabstand −1, kurze Caption-Blöcke, y=1200 bei 1080×1920. **Phrygian_Drift_2026-09-04T124142.mp3 mit −20 dB Gain, ab 0:30**. Stimme auf −16 LUFS mit −2 dBTP Ziel anpassen, Master-Limiter gegen Übersteuerung. Schon verzerrtes Audio wird dadurch nicht repariert.
 
 Der Agent prüft Retakes anhand von Wortzeiten und Audio und erstellt den Schnittplan; bedeutungsvolle Wiederholungen bleiben erhalten. Whisper kann Versprecher auslassen. Subtitle-Edit-GUI-Postprocessing wird nicht direkt übernommen. Das lokale Tool baut kurze Captions aus Purfview-Wortzeiten.
 
@@ -34,7 +34,7 @@ Tooling: uv mit Python 3.11+ und Pillow (automatisch über Script-Metadaten inst
 
 - `background_music/`: wenige wiederverwendbare Musikbetten.
 - `sound_fx/`: kurze Effekte wie Whoosh, Pop, Click oder Shutter.
-- `fonts/`: Schriftdateien, Untertitel-Standard Alte Haas Grotesk Bold, Titel-Standard Gondens DEMO.
+- `fonts/`: Schriftdateien, Untertitel-Standard Alte Haas Grotesk Bold, Titel-Standard Alte Haas Grotesk Bold.
 - `LUTs/`: zwei LUTs für den Kamera-Standard.
 
 Folgende Inhalte bleiben bewusst lokal und werden nicht in Git aufgenommen:
@@ -83,4 +83,4 @@ Research trends running der letzten 7 Tage.
 Research hooks hybrid athlete.
 ```
 
-Fünfte Intake-Frage: Titel oben ja/nein und genauer Wortlaut. Standard: Gondens DEMO 96 px, schwarz auf weißem Hintergrund mit abgerundeten Ecken, über die gesamte Videolänge. Musik startet künftig standardmäßig bei Sekunde 30. Schatten und Text werden separat gerendert, damit die Schrift trotz weichem Schatten scharf bleibt.
+Fünfte Intake-Frage: Titel oben ja/nein und genauer Wortlaut. Standard: Alte Haas Grotesk Bold 76 px, Textoberkante y=240, schwarz auf eng anliegendem weißem Hintergrund je Textzeile, über die gesamte Videolänge. Musik startet künftig standardmäßig bei Sekunde 30. Schatten und Text werden separat gerendert, damit die Schrift trotz weichem Schatten scharf bleibt.

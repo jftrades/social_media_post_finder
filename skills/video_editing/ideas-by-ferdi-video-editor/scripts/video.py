@@ -167,39 +167,38 @@ def captions(job, words, work):
             header += f'Dialogue: {layer},{ass_time(start)},{ass_time(end)},Default,,0,0,0,,{{{pos}{effect}}}{text}\n'
     for g in groups:
         add_text(' '.join(w['word'] for w in g), g[0]['start'], g[-1]['end'],
-                 job.get('caption_y',1150), job.get('font','Alte Haas Grotesk'),
+                 job.get('caption_y',1200), job.get('font','Alte Haas Grotesk'),
                  job.get('font_size',58), 1, -1)
     if job.get('title'):
-        from PIL import ImageFont
-        title_font = TOOLS / 'fonts' / 'Gondens DEMO.otf'
-        font = ImageFont.truetype(str(title_font), 96)
-        family = font.getname()[0]
+        from PIL import Image, ImageDraw, ImageFont
+        font = ImageFont.truetype(str(TOOLS/'fonts'/'AlteHaasGroteskBold.ttf'), 76)
         lines = []
         for paragraph in job['title'].splitlines():
             line = ''
             for word in paragraph.split():
                 candidate = (line + ' ' + word).strip()
-                if font.getlength(candidate) > 780 and line:
+                if font.getlength(candidate) > 900 and line:
                     lines.append(line)
                     line = word
                 else:
                     line = candidate
             if line:
                 lines.append(line)
-        if not lines or len(lines) > 3 or any(font.getlength(line) > 780 for line in lines):
-            raise ValueError('Title too long for the top card: shorten the title or split long words.')
-        width = round(max(font.getlength(line) for line in lines)) + 84
-        height = len(lines) * 116 + 48
-        x, y, radius = (1080-width)//2, 210, 26
-        path = (f'm {radius} 0 l {width-radius} 0 b {width} 0 {width} 0 {width} {radius} '
-                f'l {width} {height-radius} b {width} {height} {width} {height} {width-radius} {height} '
-                f'l {radius} {height} b 0 {height} 0 {height} 0 {height-radius} '
-                f'l 0 {radius} b 0 0 0 0 {radius} 0')
-        end = ass_time(job.get('title_duration', max((w['end'] for w in words), default=5)))
-        header += f'Dialogue: 2,0:00:00.00,{end},Default,,0,0,0,,{{\\an7\\pos({x},{y})\\p1\\fscx100\\fscy100\\bord0\\shad0\\1c&HFFFFFF&\\1a&H00&}}{path}{{\\p0}}\n'
-        for i,line in enumerate(lines):
-            safe = line.replace('\\','').replace('{','').replace('}','')
-            header += f'Dialogue: 3,0:00:00.00,{end},Default,,0,0,0,,{{\\an5\\pos(540,{y+24+58+i*116})\\fn{family}\\fs96\\b0\\fsp0\\bord0\\shad0\\blur0\\1c&H000000&\\1a&H00&}}{safe}\n'
+        if not lines or len(lines) > 3 or any(font.getlength(line) > 900 for line in lines):
+            raise ValueError('Title too long: shorten it or split long words.')
+        # Draw text and its tight per-line background with the same font metrics.
+        title = Image.new('RGBA', (1080, 1920))
+        draw = ImageDraw.Draw(title)
+        y = 240
+        for line in lines:
+            left, top, right, bottom = draw.textbbox((0, 0), line, font=font)
+            width, height = right-left, bottom-top
+            x = (1080-width)//2
+            draw.rounded_rectangle((x-14, y-9, x+width+14, y+height+9),
+                                   radius=9, fill='white')
+            draw.text((x-left, y-top), line, font=font, fill='black')
+            y += height+16
+        title.save(work/'title.png')
     (work / 'captions.ass').write_text(header, encoding='utf-8')
 
 
@@ -315,7 +314,13 @@ def render(job, work):
         for f in (TOOLS/'fonts').glob('*'):
             if f.suffix.lower() in ('.ttf','.otf'):
                 shutil.copy2(f,fontdir/f.name)
-        args += ['-vf','ass=captions.ass:fontsdir=fonts']
+        visual = 'ass=captions.ass:fontsdir=fonts'
+        if job.get('title'):
+            title_end = float(job.get('title_duration', p['duration']))
+            if not math.isfinite(title_end) or title_end <= 0:
+                raise ValueError('Title duration must be positive and finite')
+            visual += f"[sub];movie=title.png[title];[sub][title]overlay=eof_action=repeat:enable='lt(t,{title_end})'"
+        args += ['-vf',visual]
     log = ff(args+['-c:v','libx264','-crf','18','-preset','fast','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-ar','48000','-movflags','+faststart','-t',p['duration'],'final.mp4'],work)
     (work/'render.log').write_text(log,encoding='utf-8')
     ff(['-v','error','-i','final.mp4','-f','null','-'],work)
