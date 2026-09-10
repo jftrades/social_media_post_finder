@@ -1,32 +1,36 @@
-# Social Media Post Finder
+# Ideas by Ferdi Skills
 
-Dieses Repository enthält den fokussierten Research-Skill für Ideas by Ferdi. Er untersucht aktuelle öffentliche Fitness-Inhalte aus Europa, den USA und Kanada und liefert belegte Signale statt Content-Ideen.
+Lokales Skill-Repository für Research und Storytelling rund um Ideas by Ferdi.
 
-## Der Research-Skill findet
+## Skills
 
-- neue englische und deutsche Fitness-Trends
-- wiederkehrende Videoformate und Challenges
-- tatsächlich verwendete Hooks viraler Videos ab 30 Sekunden
-- Creator-relative Outlier statt nur großer absoluter Viewzahlen
+| Skill | Aufgabe |
+|---|---|
+| [`ideas-by-ferdi-storytelling`](skills/ideas-by-ferdi-storytelling/SKILL.md) | Entwickelt aus echten Notizen genau zwei ehrliche deutsche Storytelling-Varianten inklusive Hook, Script und realistischer Drehstruktur. |
+| [`social-media-research`](skills/social-media-research/SKILL.md) | Untersucht aktuelle öffentliche Fitness-Trends, wiederkehrende Formate und belegbare virale Hooks aus Europa, den USA und Kanada. |
 
-Jeder Befund enthält seine direkte öffentliche Quelle. Der Skill vergleicht keine eigenen Videos, schreibt keine Skripte und entwickelt keine Adaptionen oder Produktionsideen.
+## Struktur
 
-## Ablauf
+```text
+skills/
+|-- ideas-by-ferdi-storytelling/
+|   |-- SKILL.md
+|   |-- agents/
+|   `-- references/
+`-- social-media-research/
+    |-- SKILL.md
+    |-- agents/
+    |-- assets/
+    |-- config/
+    `-- references/
+```
 
-Beim Start stellt der Skill zuerst höchstens zwei kurze Fragen: offener Scan oder konkreter Ausgangspunkt sowie gewünschter Fitness-Schwerpunkt und Zeitraum. Ohne Vorgabe gelten Europa, USA und Kanada, Englisch und Deutsch sowie die letzten 7 Tage.
-
-Ein vollständiger Lauf liefert bis zu:
-
-- 15 Trends
-- 15 Formate oder Challenges
-- 15 virale Hooks
-
-Wenn nicht genügend belastbare Fundstücke zugänglich sind, wird die Lücke offengelegt statt mit schwachen Treffern aufgefüllt.
+Jeder Skill ist vollständig in seinem eigenen Ordner gebündelt. Temporäre Dateien und generierte Research-Reports landen unter `output/` und werden von Git ignoriert.
 
 ## Beispielaufrufe
 
-research full scan
-research trends running
-research formats hybrid athlete
-research hooks gym
-research investigate <public URL>
+```text
+Hilf mir aus diesen Notizen eine persönliche 45-Sekunden-Story zu bauen.
+Research trends running der letzten 7 Tage.
+Research hooks hybrid athlete.
+```

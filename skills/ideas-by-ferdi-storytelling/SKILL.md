@@ -11,6 +11,7 @@ Create stories that make Ferdi relatable and motivating through honest effort, s
 
 - Before drafting, read [references/ferdi-story-bank.md](references/ferdi-story-bank.md). Use only details that pass its relevance and sensitivity rules.
 - Read [references/noah-method.md](references/noah-method.md) for the evidence-derived storytelling mechanics. Abstract the method; never reuse a creator's wording or personal story.
+- Read [references/ferdi-style-calibration.md](references/ferdi-style-calibration.md) before writing dialogue or voice-over. Treat it as a voice and specificity benchmark, not a reusable template.
 - For a planned shoot, Day in the Life, What I Eat, food ranking, Over/Under, training week, Road-to, challenge, or deep seated story, also read [references/format-playbook.md](references/format-playbook.md).
 
 ## Understand the request
@@ -50,6 +51,16 @@ After the intake, ask at most two additional short follow-up questions only when
 
 Prefer a controlled information gap: reveal the topic, goal, and stakes early while withholding the outcome or explanation. A vague mystery hook is not enough.
 
+### Preserve specificity
+
+Before drafting, identify the concrete anchors already present in Ferdi's notes: exact place, moment, number, impulsive action, physical state, literal thought, consequence, and next plan. Keep the strongest anchors in the script. Do not compress a vivid scene into a generic phrase such as “ich habe mich für eine neue Challenge entschieden.”
+
+- Prefer “Ich saß in der Bahn, sah, dass der Lauf genau in meinen zwei USA-Wochen stattfindet, und kaufte impulsiv den Startplatz” over “Die Anmeldung war spontan.”
+- Prefer the actual thought “Jeder längere Lauf fühlt sich an, als würde ich meine Gym-Progress wegwerfen” over “Ich hatte einen inneren Konflikt.”
+- Prefer “unter zwei Stunden”, “viermal Gym”, or the three named run types over “ich möchte gut vorbereitet sein.”
+- Keep messy but revealing details when they explain the decision. Polish grammar and pacing without sanitizing Ferdi's personality.
+- Use at least two concrete anchors in an ordinary story and more when Ferdi supplies them. Do not invent specifics to satisfy this rule.
+
 Use this flexible sequence when it fits:
 
 1. **Hook:** concrete event, number, test, contrast, or emotionally specific problem.
@@ -80,6 +91,10 @@ Not every video is a challenge. A result-first recap may reveal the result immed
 Write natural spoken German in Ferdi's rhythm: direct, young, self-aware, sometimes dry or lightly chaotic. Controlled phrases such as “Digga”, “komplett bodenlos”, “ausgelaugt wie Sau”, “hauptsache” or “ich krieg's gerade nicht ganz geschissen” may fit when they sound earned. Do not stack slang or imitate a generic motivational influencer.
 
 Keep sentences speakable. Preserve useful imperfections and self-corrections when they add personality, but remove rambling and repeated setup. Avoid corporate coaching language, exaggerated tragedy, fake cinematic lines, and generic slogans.
+
+Use Noah-inspired sentence logic without copying his wording: event first, then “aber/deswegen/heißt”, then the next concrete consequence. Favor one idea per spoken sentence and clear cause-and-effect over polished abstractions. Internal thoughts should sound like thoughts Ferdi would actually have, not like a narrator diagnosing his own character.
+
+Avoid replacing Ferdi's details with phrases such as “ich möchte herausfinden, was möglich ist”, “das Ganze ist widersprüchlich”, “ich stelle mich einer neuen Challenge”, or “meine Reise beginnt”. Such lines are usable only after the script has established exactly what happened and why it matters.
 
 ## Required output
 

@@ -20,7 +20,7 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Large media and raw research material
+# Large media and raw data
 *.mp4
 *.mov
 *.avi
@@ -33,12 +33,11 @@ Thumbs.db
 *.sqlite
 *.db
 
-# Temporary output
+# Generated work
+output/
 tmp/
-temp/
+.tmp/
+runs/
+work/
 *.tmp
 *.partial
-
-# Generated Typst artifacts; the .typ source reports remain tracked
-research/runs/*.pdf
-research/runs/*.log

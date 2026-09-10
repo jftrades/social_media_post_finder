@@ -53,8 +53,8 @@ ranking_signals:
 
 report_output:
   default_format: typst_pdf
-  template: research/templates/global-fitness-research.typ
-  directory: research/runs
+  template: skills/social-media-research/assets/global-fitness-research.typ
+  directory: output/research
   save_source_typ: true
   save_pdf: true
   chat_summary: true

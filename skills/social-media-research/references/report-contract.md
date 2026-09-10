@@ -1,6 +1,6 @@
 # Report contract
 
-Use research/templates/global-fitness-research.typ for full and category reports.
+Use [the supplied Typst template](../assets/global-fitness-research.typ) for full and category reports. Save generated `.typ` and `.pdf` files under `output/research/`; this directory is intentionally ignored by Git.
 
 ## Default full report
 

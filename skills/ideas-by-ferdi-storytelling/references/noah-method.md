@@ -1,6 +1,6 @@
 # Evidence-derived storytelling method
 
-This is an abstraction from the Noah Anderson YouTube Shorts corpus stored at `../../../../storytelling/corpora/noah-anderson/`. It is a structural reference, not permission to copy wording, premises, or personal experiences.
+This is an abstraction from the Noah Anderson YouTube Shorts corpus stored in [source-material/noah-anderson](source-material/noah-anderson/). It is a structural reference, not permission to copy wording, premises, or personal experiences.
 
 ## What consistently matters
 
@@ -69,3 +69,15 @@ Do not write unsupported cinematic statements such as “In diesem Moment heilte
 ## Adaptation rule
 
 Borrow the decision logic—clear goal, evolving probability, delayed answer, earned meaning. Do not borrow Noah's exact hook, food item, challenge rules, beat wording, or personal framing. Ferdi's original advantage is the tension between an ordinary full schedule, imperfect consistency, health, study, work, strength, and endurance.
+
+## Sentence-level rhythm
+
+Noah's useful writing trait is not motivational vocabulary but direct causal sequencing:
+
+1. State the event, goal, or result in plain first person.
+2. Introduce the real problem immediately.
+3. Give the specific scene or mistake that changed the plan.
+4. Connect it with simple language: but, so, because, which meant, now.
+5. State the concrete next action or measurement.
+
+For Ferdi, translate that rhythm into natural German: “aber”, “deswegen”, “heißt”, “also” and “genau da”. Avoid paragraph-long setup and elegant but empty summaries. A real train ride, impulsive entry purchase, exact travel overlap, target time, or training split is stronger than saying the decision felt “unexpected” or “challenging.”

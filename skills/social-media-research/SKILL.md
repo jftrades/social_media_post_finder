@@ -30,14 +30,14 @@ Use full scan when the user asks generally for new fitness research. Follow an e
 
 ## Workflow
 
-1. Read config/research_profile.yaml.
+1. Read [config/research_profile.yaml](config/research_profile.yaml).
 2. Read [references/research-method.md](references/research-method.md) before collecting candidates.
 3. Search public English and German sources from Europe, the United States, and Canada. Treat other regions as out of scope unless the user explicitly requests them. Do not start from a fixed creator list and do not privilege DACH unless the user requests it.
 4. Consider only videos with a verified or reasonably supported duration of at least 30 seconds. Inspect enough candidates to meet the requested category counts within the configured retrieval budget.
 5. Verify every included item against a direct public post or video URL. Record the metric snapshot and retrieval date. Never infer missing metrics or transcripts.
 6. Separate observed facts from interpretation. Use unknown and lower confidence when evidence is incomplete.
 7. Rank by outlier evidence, recency, cross-creator recurrence, data completeness, and topical relevance. Do not pad weak items to reach a quota; report a shortfall and explain the access limitation.
-8. For a full or category report, read [references/report-contract.md](references/report-contract.md), create the Typst source with research/templates/global-fitness-research.typ, compile it to PDF, and return a compact chat summary with links to both files.
+8. For a full or category report, read [references/report-contract.md](references/report-contract.md), create the Typst source with [assets/global-fitness-research.typ](assets/global-fitness-research.typ), compile it to PDF, and save both files under `output/research/`. Return a compact chat summary with links to both files.
 
 ## Boundaries
 

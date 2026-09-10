@@ -63,8 +63,12 @@ Time-sensitive snapshot from September 2026; confirm before using as a current f
 - Gym at least four times weekly, often Push / Pull / Legs / Upper.
 - Running two to three times weekly when the knee allows.
 - Recently began swimming and wants roughly one session weekly.
-- Preparing for his first-ever half marathon in San Francisco and considering a longer YouTube video about it.
+- Preparing for his first-ever official half marathon across the Golden Gate Bridge in San Francisco, roughly seven weeks after signing up, and considering a longer YouTube video about it.
+- He discovered the race spontaneously while sitting on a train. It falls exactly within the roughly two weeks he expects to be in the United States, so he impulsively paid the entry fee.
+- Current target for the half marathon: under two hours. Confirm the target and remaining weeks before using them later.
+- Intended running structure: one interval session, one easy run, and one progressively longer long run per week while keeping four weekly gym sessions.
 - Main sporting tension: become stronger while building endurance rather than choosing only one identity.
+- He would currently also like to lower his body-fat level and feel more satisfied with his physique. Longer runs can feel as if they are costing him gym progress, even though he is excited about the race and grateful to be healthy enough to attempt it.
 
 Never stack all of these numbers into an opening unless the video is explicitly testing the feasibility of the schedule.
 
@@ -113,4 +117,3 @@ For ordinary lifestyle or humor videos, use at most one deeper callback. Deep se
 - Never invent dialogue, diagnoses, motives, tears, or exact grades/dates.
 - Do not use shame about appearance, food, alcohol, grades, or scrolling as the CTA.
 - Treat impressive outcomes as moments in an unfinished process.
-
