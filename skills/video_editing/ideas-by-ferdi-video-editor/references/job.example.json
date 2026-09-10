@@ -1,6 +1,6 @@
 {
   "project": "mein-video",
-  "intake": {"format": "", "cleanup": "", "clips": "", "captions": "", "music": "", "title": "", "broll": "", "capture": "", "audio_normalization": "", "zooms": "", "title_style": "", "cutout": ""},
+  "intake": {"format": "", "cleanup": "", "original_audio": "", "clips": "", "captions": "", "music": "", "title": "", "broll": "", "broll_fallback": "", "capture": "", "audio_normalization": "", "zooms": "", "visual_timing": "", "retiming": "", "title_style": "", "cutout": ""},
   "intake_completed_levels": [],
   "intake_confirmed": false,
   "mode": "single",
@@ -25,6 +25,9 @@
   "broll_mode": "none",
   "broll_allowed": [],
   "broll": [],
+  "voiceover_inserts": [],
+  "voiceover_broll_policy": "none",
+  "visual_cut_policy": "one_second_montage_over_5s",
   "drops": [],
   "visuals": [],
   "qa_approved": false

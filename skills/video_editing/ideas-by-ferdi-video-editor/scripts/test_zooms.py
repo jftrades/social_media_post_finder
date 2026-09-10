@@ -42,7 +42,10 @@ class ZoomTests(unittest.TestCase):
                        {'intake':{k:x for k,x in self.job['intake'].items() if k!='zooms'}}):
             with self.assertRaises(ValueError):v.gate({**self.job,**change})
         vo={**self.job,'mode':'voiceover','zoom_enabled':False,'zooms':[]}
-        vo.update(strict_visual_timing=True,intake={**self.job['intake'],'zooms':'nein','visual_timing':'ja','retiming':'keine'})
+        vo.update(sources=[str(self.work/'source.mp4')],
+                  visual_cut_policy='one_second_montage_over_5s',voiceover_broll_policy='none',voiceover_inserts=[],
+                  intake={**self.job['intake'],'zooms':'nein','original_audio':'nein',
+                          'visual_timing':'one_second_montage_over_5s','retiming':'keine','broll_fallback':'none'})
         v.gate(vo)
 
     def test_plan_and_render(self):

@@ -60,7 +60,12 @@ def duration(path):
 
 
 def gate(job):
-    if job.get('intake_confirmed') is not True or job.get('intake_completed_levels') != [1,2,3] or not all(job.get('intake', {}).get(k) for k in ('format', 'cleanup', 'clips', 'captions', 'music', 'title', 'broll', 'capture', 'audio_normalization', 'zooms')):
+    mode=job.get('mode')
+    if mode not in ('single', 'multi', 'voiceover'):
+        raise ValueError('Invalid mode')
+    required=('format','clips','captions','music','title','broll','capture','audio_normalization','zooms')
+    required+=('original_audio','visual_timing','retiming','broll_fallback') if mode=='voiceover' else ('cleanup',)
+    if job.get('intake_confirmed') is not True or job.get('intake_completed_levels') != [1,2,3] or not all(job.get('intake', {}).get(k) for k in required):
         raise ValueError('Complete intake levels 1, 2 and 3 in order before editing.')
     if job['intake']['audio_normalization'] not in ('ja','nein') or job.get('audio_normalize') is not (job['intake']['audio_normalization']=='ja'):
         raise ValueError('Audio normalization needs an explicit matching yes/no answer.')
@@ -68,9 +73,26 @@ def gate(job):
         raise ValueError('Ask title duration in seconds.')
     if job.get('segment_overrides'):
         raise ValueError('Segment exceptions need an explicitly adapted render plan; do not silently apply global defaults.')
-    if job.get('mode') == 'voiceover':
-        if not all(job['intake'].get(k) for k in ('visual_timing','retiming')) or not isinstance(job.get('strict_visual_timing'),bool):
-            raise ValueError('Complete voice-over timing and retiming questions.')
+    if mode == 'voiceover':
+        if len(job.get('sources',[])) != 1:
+            raise ValueError('Voice-over requires exactly one narration source.')
+        if job.get('visual_cut_policy') != 'one_second_montage_over_5s' or job['intake']['visual_timing'] != job['visual_cut_policy']:
+            raise ValueError('Voice-over must use the confirmed one-second montage policy for clips over five seconds.')
+        policy=job.get('voiceover_broll_policy')
+        if policy not in ('none','explicit','if_insufficient','explicit_or_insufficient') or job['intake']['broll_fallback'] != policy:
+            raise ValueError('Confirm when extra B-roll may be used.')
+        if policy != 'none' and not job.get('broll_allowed'):
+            raise ValueError('Name the B-roll folders allowed for fallback.')
+        answer=job['intake']['original_audio']
+        inserts=job.get('voiceover_inserts')
+        if answer not in ('ja','nein') or not isinstance(inserts,list) or (answer=='ja') is not bool(inserts):
+            raise ValueError('Confirm original-audio inserts and document each approved insert.')
+        for insert in inserts:
+            if not isinstance(insert,dict) or not all(k in insert for k in ('path','start','end','reason')):
+                raise ValueError('Each original-audio insert needs path, start, end and reason.')
+            start,end=insert['start'],insert['end']
+            if not all(isinstance(x,(int,float)) and math.isfinite(x) for x in (start,end)) or not 0 <= start < end or not str(insert['reason']).strip():
+                raise ValueError('Each original-audio insert needs a valid interval and spoken-line description.')
     zoom_gate(job)
     title_gate(job)
     cutout_gate(job)
@@ -84,9 +106,7 @@ def gate(job):
         raise ValueError('Set title text, or an empty string for no title.')
     if not re.fullmatch(r'[\w-]+', job['project']):
         raise ValueError('Project name must contain only letters, numbers, hyphens or underscores.')
-    if job['mode'] not in ('single', 'multi', 'voiceover'):
-        raise ValueError('Invalid mode')
-    if not job['sources'] or (job['mode'] == 'single' and len(job['sources']) != 1):
+    if not job['sources'] or (mode == 'single' and len(job['sources']) != 1):
         raise ValueError('Invalid source count')
 
 
@@ -420,17 +440,37 @@ def title_image(job, work):
 
 
 
-def visual_timing(visual, original_duration, strict):
+def visual_timing(visual, original_duration):
     start,end,speed=visual['start'],visual['end'],visual.get('speed',1)
     if not all(isinstance(x,(int,float)) and math.isfinite(x) for x in (start,end,speed)) or speed < 1 or not 0 <= start < end <= original_duration+.001:
         raise ValueError('Invalid visual range or speed-up; source must contain the full interval.')
-    length=(end-start)/speed
-    if strict and (abs(start-original_duration*2/3)>.001 or abs(length-2.5)>.001):
-        raise ValueError('Strict visuals require in-point at 2/3 and exactly 2.5 seconds after retiming.')
-    return length
+    return (end-start)/speed
 
 
-def video_filter(capture, rotate=0):
+def voiceover_visual_gate(job):
+    if len(job.get('visuals',[])) < 2:
+        raise ValueError('Voice-over requires multiple visual clips or snippets.')
+    groups={}
+    insert_paths={str(media(x['path'])) for x in job.get('voiceover_inserts',[])}
+    for visual in job.get('visuals',[]):
+        path=media(visual['path'])
+        source_duration=duration(path)
+        length=visual_timing(visual,source_duration)
+        if visual.get('original_audio'):
+            if str(path) not in insert_paths:
+                raise ValueError('Original-audio visual is not declared in voiceover_inserts.')
+            continue
+        if source_duration > 5.001:
+            if abs(length-1) > .02:
+                raise ValueError('Voice-over clips over five seconds require one-second output snippets.')
+            groups.setdefault(str(path),[]).append((visual['start'],visual['end']))
+    for intervals in groups.values():
+        ordered=sorted(intervals)
+        if len(ordered) < 2 or any(a[1] > b[0]+.001 for a,b in zip(ordered,ordered[1:])):
+            raise ValueError('Each long voice-over clip needs multiple distinct, non-overlapping snippets.')
+
+
+def video_filter(capture, rotate=0, normalize_mix=.75, look_mix=.30):
     geometry = 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30'
     if rotate in (90, -90):
         geometry = ('transpose=clock,' if rotate == 90 else 'transpose=cclock,') + geometry
@@ -438,11 +478,13 @@ def video_filter(capture, rotate=0):
         return f'[0:v]{geometry}[v]'
     if capture != 'camera':
         raise ValueError('Capture must be phone or camera')
+    if not all(isinstance(x,(int,float)) and math.isfinite(x) and 0 <= x <= 1 for x in (normalize_mix,look_mix)):
+        raise ValueError('Camera LUT mixes must be between 0 and 1')
     return (f'[0:v]{geometry},format=gbrp,split=2[original][convert];'
             "[convert]lut3d=file=normalize.cube[converted];"
-            "[original][converted]blend=all_expr='A*0.25+B*0.75',split=2[normalized][look];"
+            f"[original][converted]blend=all_expr='A*{1-normalize_mix}+B*{normalize_mix}',split=2[normalized][look];"
             "[look]lut3d=file=look.cube[graded];"
-            "[normalized][graded]blend=all_expr='A*0.70+B*0.30',format=yuv420p[v]")
+            f"[normalized][graded]blend=all_expr='A*{1-look_mix}+B*{look_mix}',format=yuv420p[v]")
 
 
 def add_broll(job, work, base, length):
@@ -466,7 +508,7 @@ def add_broll(job, work, base, length):
             raise ValueError('Automatic B-roll requires a documented content match.')
         name = f'broll{i:04}.mkv'
         ff(['-ss',start,'-i',src,'-t',end-start,'-an','-filter_complex',
-            video_filter(entry.get('capture','phone'),entry.get('rotate',0)),
+            video_filter(entry.get('capture','phone'),entry.get('rotate',0),entry.get('camera_lut_rec709_mix',.75),entry.get('camera_lut_look_mix',.30)),
             '-map','[v]','-c:v','libx264','-preset','fast','-crf','18','-pix_fmt','yuv420p',name],work)
         args += ['-i', name]
         filters.append(f'[{i+1}:v]setpts=PTS-STARTPTS+{at}/TB[b{i}]')
@@ -509,19 +551,18 @@ def render(job, work):
     base = 'clean.mkv'
     if job['mode'] == 'voiceover':
         visuals = job.get('visuals', [])
-        lengths=[visual_timing(v,duration(media(v['path'])),job.get('strict_visual_timing',False)) for v in visuals]
+        voiceover_visual_gate(job)
+        lengths=[visual_timing(v,duration(media(v['path']))) for v in visuals]
         if sum(lengths) < p['duration']-.02:
             raise ValueError('B-roll does not cover the voice-over')
-        if job.get('strict_visual_timing') and abs(sum(lengths)-p['duration'])>.001:
-            raise ValueError('Voice duration does not fit the exact 2.5-second grid; ask for an explicit timing exception.')
         visual_parts = []
         for n,v in enumerate(visuals):
             if not 0 <= v['start'] < v['end'] <= duration(media(v['path']))+.02:
                 raise ValueError('Invalid B-roll range')
             name = f'visual{n:04}.mkv'
-            graph=video_filter(v.get('capture',job['capture']),v.get('rotate',0))
+            graph=video_filter(v.get('capture',job['capture']),v.get('rotate',0),v.get('camera_lut_rec709_mix',.75),v.get('camera_lut_look_mix',.30))
             graph+=f";[v]setpts=(PTS-STARTPTS)/{v.get('speed',1)},fps=30[retimed]"
-            ff(['-ss',v['start'],'-i',media(v['path']),'-t',lengths[n],'-an','-filter_complex',graph,'-map','[retimed]','-c:v','libx264','-preset','fast','-crf','18','-pix_fmt','yuv420p',name],work)
+            ff(['-ss',v['start'],'-i',media(v['path']),'-t',v['end']-v['start'],'-an','-filter_complex',graph,'-map','[retimed]','-c:v','libx264','-preset','fast','-crf','18','-pix_fmt','yuv420p',name],work)
             visual_parts.append(name)
         (work/'visuals.txt').write_text(''.join(f"file '{x}'\n" for x in visual_parts),encoding='utf-8')
         ff(['-f','concat','-safe','0','-i','visuals.txt','-i','clean.mkv','-map','0:v','-map','1:a','-c','copy','-shortest','base.mkv'],work)
@@ -597,7 +638,7 @@ def finish(job, work):
     dest.mkdir(parents=True,exist_ok=False)
     originals = dest/'originals'
     originals.mkdir()
-    paths = list(dict.fromkeys(job['sources']+[v['path'] for v in job.get('visuals',[])+job.get('broll',[])]))
+    paths = list(dict.fromkeys(job['sources']+job.get('archive_sources',[])+[v['path'] for v in job.get('visuals',[])+job.get('broll',[])]))
     manifest=[]
     for i,path in enumerate(paths):
         src=media(path)
