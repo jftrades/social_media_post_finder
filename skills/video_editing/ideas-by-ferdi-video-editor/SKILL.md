@@ -24,7 +24,7 @@ Nur den zum Format passenden Block fragen.
 1. Schnitt: Pausen, Versprecher und verworfene Anläufe entfernen und jeweils den letzten vollständigen Take behalten? Ja / Nein / nur benannte Stellen?
 2. Aufnahme pro Clip: Handy ohne LUT / Kamera mit CINELIKE→Rec.709 75 % plus MERRY MEN II 30 % / bereits farbkorrigiert ohne LUT?
 3. Sprache: jeden Originalclip auf −16 LUFS und höchstens −2 dBTP angleichen? Ja / Nein? Sicherheits-Limiter bleibt aktiv.
-4. Titel: keiner / exakter Text + Einblenddauer in Sekunden + Snapchat / Max-Readable / Preset 1 / Preset 2 / Preset 3? Bei Preset 1–3 zusätzlich getrennt fragen: Was steht oben, in der Mitte und unten? `nix`, `leer`, `kein Text` oder eine leere Antwort lässt nur diese Zeile weg.
+4. Titel: keiner / exakter Text + Standarddauer 4 Sekunden oder abweichende Dauer + Snapchat / Max-Readable / Preset 1 / Preset 2 / Preset 3? Bei Preset 1–3 zusätzlich getrennt fragen: Was steht oben, in der Mitte und unten? `nix`, `leer`, `kein Text` oder eine leere Antwort lässt nur diese Zeile weg.
 5. Untertitel: Standard (Alte Haas Grotesk Bold, weiß, weicher Schatten, y=1200) / keine / genaue Abweichung?
 6. Musik: Standard (Phrygian Drift ab 0:30, −20 dB) / keine / anderer Song mit Startzeit und Lautstärke?
 7. Pointe-Zooms: Whoosh und weich 100→120 %, am nächsten Cut zurück auf 100 %? Ja / Nein?
@@ -34,7 +34,7 @@ Nur den zum Format passenden Block fragen.
 1. Originalton-Einschübe: Gibt es Bildclips, deren gesprochener Originalton das Voiceover unterbrechen und vollständig hörbar bleiben soll? Nein / ja – welche Clips und welcher Satz oder Take? Das übrige Voiceover wird standardmäßig von Pausen und verworfenen Anläufen bereinigt.
 2. Aufnahme pro Bildclip: Handy ohne LUT / Kamera mit CINELIKE→Rec.709 75 % plus MERRY MEN II 30 % / bereits farbkorrigiert ohne LUT?
 3. Sprache: Voiceover und jeden Originalton-Einschub einzeln auf −16 LUFS und höchstens −2 dBTP angleichen? Ja / Nein? Sicherheits-Limiter bleibt aktiv.
-4. Titel: keiner / exakter Text + Einblenddauer in Sekunden + Snapchat / Max-Readable / Preset 1 / Preset 2 / Preset 3? Bei Preset 1–3 zusätzlich getrennt fragen: Was steht oben, in der Mitte und unten? `nix`, `leer`, `kein Text` oder eine leere Antwort lässt nur diese Zeile weg.
+4. Titel: keiner / exakter Text + Standarddauer 4 Sekunden oder abweichende Dauer + Snapchat / Max-Readable / Preset 1 / Preset 2 / Preset 3? Bei Preset 1–3 zusätzlich getrennt fragen: Was steht oben, in der Mitte und unten? `nix`, `leer`, `kein Text` oder eine leere Antwort lässt nur diese Zeile weg.
 5. Untertitel: Standard (Alte Haas Grotesk Bold, weiß, weicher Schatten, y=1200) / keine / genaue Abweichung?
 6. Musik: Standard (Warm Relaxed Groove ab 0:00, −20 dB) / keine / anderer Song mit Startzeit und Lautstärke?
 7. Bild-Zooms auf Pointen: Whoosh und weich 100→120 %, beim nächsten Bildschnitt zurück auf 100 %? Ja / Nein?

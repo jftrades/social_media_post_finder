@@ -39,7 +39,12 @@ class Titles(unittest.TestCase):
             job=dict(mode='single',title='\n'.join(lines),title_lines=lines,title_style=style,intake={'title_style':style})
             v.title_gate(job);v.title_image(job,work)
             layout=v.read(work/'title-layout.json')
-            self.assertEqual(layout['animation'],'pending design approval')
+            expected_animation={
+                'preset_1':'rise 40px + cubic ease-out + 1.0s alpha fade; 0.12s stagger',
+                'preset_2':'top from left and middle from above together; bottom rises after 0.12s; cubic ease-out + 1.0s alpha fade',
+                'preset_3':'none'}
+            self.assertEqual(layout['animation'],expected_animation[style])
+            self.assertEqual(layout['default_duration'],4)
             for line,(size,x,y) in zip(layout['lines'],geometry):
                 self.assertTrue(line['rendered'])
                 self.assertEqual(line['font_size_px'],size)
@@ -52,6 +57,23 @@ class Titles(unittest.TestCase):
         v.title_gate(empty);v.title_image(empty,work)
         self.assertEqual([x['rendered'] for x in v.read(work/'title-layout.json')['lines']],[True,False,False])
         v.title_gate(dict(mode='single',title='',title_lines=['nix','','kein text'],title_style='preset_3',intake={'title_style':'preset_3'}))
+
+    def test_multiline_animation_filters(self):
+        plan={'duration':10}
+        p1=dict(title='A\nB\nC',title_lines=['A','B','C'],title_style='preset_1')
+        graph=v.visual_filter(p1,plan)
+        self.assertIn("st=0.12:d=1.0",graph)
+        self.assertIn("st=0.24:d=1.0",graph)
+        self.assertIn("+40*(1-",graph)
+        self.assertIn("lt(t,4.0)",graph)
+        p2=dict(title='A\nB\nC',title_lines=['A','B','C'],title_style='preset_2',title_duration=6)
+        graph=v.visual_filter(p2,plan)
+        self.assertEqual(graph.count('st=0:d=1.0'),2)
+        self.assertIn("st=0.12:d=1.0",graph)
+        self.assertIn("-40*(1-",graph)
+        self.assertIn("lt(t,6.0)",graph)
+        p3=dict(title='A\nB\nC',title_lines=['A','B','C'],title_style='preset_3')
+        self.assertIn('movie=title.png',v.visual_filter(p3,plan))
 
 
 if __name__=='__main__':unittest.main()

@@ -27,7 +27,8 @@ class Intake(unittest.TestCase):
         job['intake']['audio_normalization']='nein';v.gate(job)
         job.update(title='Test',title_style='snapchat',title_behind_person=False)
         job['intake'].update(title_style='snapchat',cutout='nein')
-        with self.assertRaises(ValueError):v.gate(job)
+        v.gate(job)  # Omitted duration uses the four-second title standard.
+        with self.assertRaises(ValueError):v.gate({**job,'title_duration':0})
         job['title_duration']=3;v.gate(job)
         with self.assertRaises(ValueError):v.gate({**job,'segment_overrides':[{'source':0,'captions':False}]})
         self.assertEqual(v.video_filter('graded'),v.video_filter('phone'))

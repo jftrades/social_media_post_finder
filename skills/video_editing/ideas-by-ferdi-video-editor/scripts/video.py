@@ -69,8 +69,8 @@ def gate(job):
         raise ValueError('Complete intake levels 1, 2 and 3 in order before editing.')
     if job['intake']['audio_normalization'] not in ('ja','nein') or job.get('audio_normalize') is not (job['intake']['audio_normalization']=='ja'):
         raise ValueError('Audio normalization needs an explicit matching yes/no answer.')
-    if job.get('title') and (not isinstance(job.get('title_duration'),(int,float)) or not math.isfinite(job['title_duration']) or job['title_duration'] <= 0):
-        raise ValueError('Ask title duration in seconds.')
+    if job.get('title') and ('title_duration' in job) and (not isinstance(job['title_duration'],(int,float)) or not math.isfinite(job['title_duration']) or job['title_duration'] <= 0):
+        raise ValueError('Title duration must be positive; omitted uses the four-second standard.')
     if job.get('segment_overrides'):
         raise ValueError('Segment exceptions need an explicitly adapted render plan; do not silently apply global defaults.')
     if mode == 'voiceover':
@@ -349,15 +349,50 @@ def visual_filter(job,plan):
     """Keep captions above both the title and person; only picture layers are zoomed."""
     if not job.get('title'):
         return 'ass=captions.ass:fontsdir=fonts'
-    end=float(job.get('title_duration',plan['duration']))
+    end=float(job.get('title_duration',4))
     if not math.isfinite(end) or end<=0:
         raise ValueError('Title duration must be positive and finite')
+    animated=job.get('title_style') in ('preset_1','preset_2')
+    def title_layers(base):
+        if not animated:
+            return f"movie=title.png[title];{base}[title]overlay=eof_action=repeat:enable='lt(t,{end})'"
+        layout=title_lines(job)
+        chain=[];current=base;visible=0
+        for index,text in enumerate(layout):
+            if not text:
+                continue
+            start=(visible*.12 if job['title_style']=='preset_1' else (0 if index<2 else .12))
+            progress=f"min(max((t-{start})/1.0\\,0)\\,1)"
+            ease=f"(1-pow(1-{progress}\\,3))"
+            spec=MULTILINE_TITLE_PRESETS[job['title_style']][index]
+            x=f"{540+spec['x']/2}-overlay_w/2"
+            y=f"{960-spec['y']/2}-overlay_h/2"
+            if job['title_style']=='preset_1' or index==2:
+                y=f"{y}+40*(1-{ease})"
+            elif index==0:
+                x=f"{x}-40*(1-{ease})"
+            else:
+                y=f"{y}-40*(1-{ease})"
+            chain.append(f"movie=title-line-{index}.png,loop=loop=-1:size=1:start=0,setpts=N/(30*TB),format=rgba,fade=t=in:st={start}:d=1.0:alpha=1[line{index}]")
+            output=f'[title{index}]'
+            chain.append(f"{current}[line{index}]overlay=x='{x}':y='{y}':eof_action=repeat:enable='lt(t,{end})'{output}")
+            current=output;visible+=1
+        return ';'.join(chain),current
     if job.get('title_behind_person'):
+        if animated:
+            layers,current=title_layers('[background]')
+            return ("split=2[background][person];"+layers+';'+
+                    "movie=cutout-alpha.mkv,format=gray[alpha];"
+                    "[person][alpha]alphamerge[foreground];"+
+                    f"{current}[foreground]overlay=shortest=1,ass=captions.ass:fontsdir=fonts")
         return ("split=2[background][person];movie=title.png[title];"
                 f"[background][title]overlay=eof_action=repeat:enable='lt(t,{end})'[titled];"
                 "movie=cutout-alpha.mkv,format=gray[alpha];"
                 "[person][alpha]alphamerge[foreground];"
                 "[titled][foreground]overlay=shortest=1,ass=captions.ass:fontsdir=fonts")
+    if animated:
+        layers,current=title_layers('[in]')
+        return layers+';'+current+'ass=captions.ass:fontsdir=fonts'
     return (f"movie=title.png[title];[in][title]overlay=eof_action=repeat:enable='lt(t,{end})',"
             'ass=captions.ass:fontsdir=fonts')
 
@@ -384,6 +419,8 @@ def multiline_title_image(job,work):
     lines=title_lines(job)
     canvas=Image.new('RGBA',(1080,1920))
     layout=[]
+    for index in range(3):
+        (work/f'title-line-{index}.png').unlink(missing_ok=True)
     for text,spec in zip(lines,MULTILINE_TITLE_PRESETS[style]):
         if not text:
             layout.append({**spec,'text':'','rendered':False})
@@ -407,20 +444,25 @@ def multiline_title_image(job,work):
         left=round(center_x-mask.width/2);upper=round(center_y-mask.height/2)
         if left<0 or upper<0 or left+mask.width>1080 or upper+mask.height>1920:
             raise ValueError(f"{style} {spec['slot']} text does not fit its fixed position; shorten the line.")
+        layer=Image.new('RGBA',mask.size)
         if spec['shadow']:
-            shadow=Image.new('L',canvas.size)
-            shadow.paste(mask,(left+1,upper+3))
+            shadow=Image.new('L',mask.size)
+            shadow.paste(mask,(1,3))
             shadow=shadow.filter(ImageFilter.GaussianBlur(4)).point(lambda value:round(value*.38))
-            dark=Image.new('RGBA',canvas.size,(0,0,0,0));dark.putalpha(shadow)
-            canvas=Image.alpha_composite(canvas,dark)
-        alpha=Image.new('L',canvas.size);alpha.paste(mask,(left,upper))
-        light=Image.new('RGBA',canvas.size,(255,255,255,0));light.putalpha(alpha)
-        canvas=Image.alpha_composite(canvas,light)
+            dark=Image.new('RGBA',mask.size,(0,0,0,0));dark.putalpha(shadow)
+            layer=Image.alpha_composite(layer,dark)
+        light=Image.new('RGBA',mask.size,(255,255,255,0));light.putalpha(mask)
+        layer=Image.alpha_composite(layer,light)
+        layer.save(work/f'title-line-{len(layout)}.png')
+        canvas.alpha_composite(layer,(left,upper))
         layout.append({**spec,'text':text,'rendered':True,'font_size_px':size,
                        'output_x':center_x,'output_y':center_y,'bounds':[left,upper,left+mask.width,upper+mask.height]})
     canvas.save(work/'title.png')
+    animation=('rise 40px + cubic ease-out + 1.0s alpha fade; 0.12s stagger' if style=='preset_1' else
+               'top from left and middle from above together; bottom rises after 0.12s; cubic ease-out + 1.0s alpha fade' if style=='preset_2' else
+               'none')
     save(work/'title-layout.json',{'style':style,'base_font_size':15,'coordinate_space':'2160x3840 center-origin; rendered at 50%',
-                                   'animation':'pending design approval','lines':layout})
+                                   'animation':animation,'default_duration':4,'lines':layout})
 
 
 def title_image(job, work):
@@ -635,7 +677,7 @@ def render(job, work):
     graph += mix+(f'amix=inputs={count}:duration=first:normalize=0,' if count>1 else '')+'alimiter=limit=0.794:level=false:latency=true[a]'
     args += ['-filter_complex',graph,'-map','0:v:0','-map','[a]']
     if job.get('captions') or job.get('title'):
-        captions({'title_duration':p['duration'], **job},p['words'],work)
+        captions({**job,'title_duration':job.get('title_duration',4)},p['words'],work)
         fontdir = work / 'fonts'
         fontdir.mkdir(exist_ok=True)
         for f in (TOOLS/'fonts').glob('*'):
