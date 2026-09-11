@@ -306,16 +306,31 @@ def captions(job, words, work):
 
 
 
-TITLE_STYLES = ('snapchat', 'max_readable', 'blurred_key_quali')
+STATIC_TITLE_STYLES = ('snapchat', 'max_readable')
+MULTILINE_TITLE_STYLES = ('preset_1', 'preset_2', 'preset_3')
+TITLE_STYLES = STATIC_TITLE_STYLES + MULTILINE_TITLE_STYLES
+EMPTY_TITLE_LINES = ('', 'nix', 'leer', 'kein text')
+
+
+def title_lines(job):
+    values=job.get('title_lines')
+    if not isinstance(values,list) or len(values)!=3 or not all(isinstance(x,str) for x in values):
+        raise ValueError('Preset 1/2/3 require exactly three text answers: oben, mitte, unten.')
+    return ['' if x.strip().casefold() in EMPTY_TITLE_LINES else x.strip() for x in values]
 
 
 def title_gate(job):
     style = job.get('title_style', 'max_readable')
     if style not in TITLE_STYLES:
         raise ValueError('Unknown title style')
+    if style in MULTILINE_TITLE_STYLES:
+        lines=title_lines(job)
+        combined='\n'.join(x for x in lines if x)
+        if job.get('title','').strip() != combined:
+            raise ValueError('Preset title must equal its non-empty oben/mitte/unten lines in order.')
     if job.get('title'):
         if job.get('intake',{}).get('title_style') != style:
-            raise ValueError('Ask title style: Snapchat / Max-Readable / Blurred-key-quali')
+            raise ValueError('Ask title style: Snapchat / Max-Readable / Preset 1 / Preset 2 / Preset 3')
 
 
 def cutout_gate(job):
@@ -347,42 +362,78 @@ def visual_filter(job,plan):
             'ass=captions.ass:fontsdir=fonts')
 
 
+MULTILINE_TITLE_PRESETS = {
+    'preset_1': (
+        dict(slot='oben',font='AlteHaasGroteskBold.ttf',scale=.745,x=0,y=1288,spacing=-1,shadow=True),
+        dict(slot='mitte',font='AlteHaasGroteskBold.ttf',scale=1.458,x=0,y=1136,spacing=-1,shadow=True),
+        dict(slot='unten',font='Child Hood.otf',scale=.626,x=419,y=1020,spacing=0,shadow=True,star=True)),
+    'preset_2': (
+        dict(slot='oben',font='AlteHaasGroteskBold.ttf',scale=2.08,x=-316,y=1079,spacing=-1,shadow=True,stroke=3),
+        dict(slot='mitte',font='AlteHaasGroteskBold.ttf',scale=2.08,x=280,y=872,spacing=-1,shadow=True,stroke=3),
+        dict(slot='unten',font='Child Hood.otf',scale=.603,x=419,y=672,spacing=0,shadow=True,star=True)),
+    'preset_3': (
+        dict(slot='oben',font='AlteHaasGroteskBold.ttf',scale=.80,x=0,y=300,spacing=0,shadow=False),
+        dict(slot='mitte',font='Tanker-Regular.otf',scale=2.376,x=0,y=120,spacing=-1,shadow=False),
+        dict(slot='unten',font='Tanker-Regular.otf',scale=2.376,x=0,y=-120,spacing=-1,shadow=False))
+}
+
+
+def multiline_title_image(job,work):
+    from PIL import Image,ImageDraw,ImageFont,ImageFilter
+    style=job['title_style']
+    lines=title_lines(job)
+    canvas=Image.new('RGBA',(1080,1920))
+    layout=[]
+    for text,spec in zip(lines,MULTILINE_TITLE_PRESETS[style]):
+        if not text:
+            layout.append({**spec,'text':'','rendered':False})
+            continue
+        if spec.get('star') and not text.startswith('*'):
+            text='*'+text
+        size=round(15*4*spec['scale'])
+        font=ImageFont.truetype(str(TOOLS/'fonts'/spec['font']),size)
+        stroke=spec.get('stroke',0)
+        advances=[font.getlength(char) for char in text]
+        width=max(1,math.ceil(sum(advances)+spec['spacing']*max(0,len(text)-1)+2*stroke))
+        boxes=[font.getbbox(char,stroke_width=stroke) for char in text]
+        top=min(box[1] for box in boxes);bottom=max(box[3] for box in boxes)
+        mask=Image.new('L',(width+12,max(1,bottom-top)+12))
+        draw=ImageDraw.Draw(mask);x=6
+        for char,advance in zip(text,advances):
+            draw.text((x+stroke,6-top),char,font=font,fill=255,stroke_width=stroke,stroke_fill=255)
+            x+=advance+spec['spacing']
+        center_x=540+spec['x']/2
+        center_y=960-spec['y']/2
+        left=round(center_x-mask.width/2);upper=round(center_y-mask.height/2)
+        if left<0 or upper<0 or left+mask.width>1080 or upper+mask.height>1920:
+            raise ValueError(f"{style} {spec['slot']} text does not fit its fixed position; shorten the line.")
+        if spec['shadow']:
+            shadow=Image.new('L',canvas.size)
+            shadow.paste(mask,(left+1,upper+3))
+            shadow=shadow.filter(ImageFilter.GaussianBlur(4)).point(lambda value:round(value*.38))
+            dark=Image.new('RGBA',canvas.size,(0,0,0,0));dark.putalpha(shadow)
+            canvas=Image.alpha_composite(canvas,dark)
+        alpha=Image.new('L',canvas.size);alpha.paste(mask,(left,upper))
+        light=Image.new('RGBA',canvas.size,(255,255,255,0));light.putalpha(alpha)
+        canvas=Image.alpha_composite(canvas,light)
+        layout.append({**spec,'text':text,'rendered':True,'font_size_px':size,
+                       'output_x':center_x,'output_y':center_y,'bounds':[left,upper,left+mask.width,upper+mask.height]})
+    canvas.save(work/'title.png')
+    save(work/'title-layout.json',{'style':style,'base_font_size':15,'coordinate_space':'2160x3840 center-origin; rendered at 50%',
+                                   'animation':'pending design approval','lines':layout})
+
+
 def title_image(job, work):
-    from PIL import Image, ImageDraw, ImageFont, ImageFilter
+    from PIL import Image, ImageDraw, ImageFont
     style = job.get('title_style','max_readable')
     if style not in TITLE_STYLES:
         raise ValueError('Unknown title style')
-    path = TOOLS/'fonts'/({'snapchat':'LiberationSans-Regular.ttf','blurred_key_quali':'Tanker-Regular.otf'}.get(style,'AlteHaasGroteskBold.ttf'))
-    class MixedFont:
-        # Preserve German title text when the demo lacks individual glyphs.
-        def __init__(self,size):
-            self.main=ImageFont.truetype(str(path),size)
-            fallback_path=str(TOOLS/'fonts'/'AlteHaasGroteskBold.ttf')
-            reference=ImageFont.truetype(fallback_path,size)
-            main_cap=self.main.getbbox('H',anchor='ls')
-            fallback_cap=reference.getbbox('H',anchor='ls')
-            ratio=(main_cap[3]-main_cap[1])/(fallback_cap[3]-fallback_cap[1])
-            self.fallback=ImageFont.truetype(fallback_path,round(size*ratio))
-            self.missing=bytes(self.main.getmask('\U0010ffff'))
-        def face(self,c):
-            return self.fallback if bytes(self.main.getmask(c))==self.missing else self.main
-        def getlength(self,text):
-            return sum(self.face(c).getlength(c) for c in text)
-        def getbbox(self,text,stroke_width=0):
-            boxes=[];x=0
-            for c in text:
-                f=self.face(c);l,t,r,b=f.getbbox(c,anchor='ls',stroke_width=stroke_width)
-                boxes.append((x+l,t,x+r,b));x+=f.getlength(c)
-            return (math.floor(min(b[0] for b in boxes)),min(b[1] for b in boxes),math.ceil(max(b[2] for b in boxes)),max(b[3] for b in boxes))
-        def draw(self,draw,xy,text,stroke):
-            x,y=xy
-            for c in text:
-                f=self.face(c)
-                draw.text((x,y),c,font=f,anchor='ls',fill=255,stroke_width=stroke,stroke_fill=255)
-                x+=f.getlength(c)
+    if style in MULTILINE_TITLE_STYLES:
+        return multiline_title_image(job,work)
+    path = TOOLS/'fonts'/('LiberationSans-Regular.ttf' if style=='snapchat' else 'AlteHaasGroteskBold.ttf')
     def layout(size):
-        font = MixedFont(size) if style=='blurred_key_quali' else ImageFont.truetype(str(path),size)
-        stroke = max(1,round(size*.025)) if style == 'blurred_key_quali' else 0
+        font = ImageFont.truetype(str(path),size)
+        stroke = 0
         lines=[]
         for paragraph in job['title'].splitlines():
             line=''
@@ -397,46 +448,25 @@ def title_image(job, work):
         fits=bool(lines) and all(box[2]-box[0]<=900 for box in boxes)
         return font,stroke,lines,boxes,height,fits
     size=46 if style=='snapchat' else 76
-    if style=='blurred_key_quali':
-        # Fixed 900x220 upper title area; preserve letter proportions, never stretch.
-        for size in range(400,19,-1):
-            font,stroke,lines,boxes,height,fits=layout(size)
-            if fits and height<=220:break
-        else:raise ValueError('Title cannot fit in the fixed upper title area')
-    else:
-        font,stroke,lines,boxes,height,fits=layout(size)
-        if not fits or height>600:
-            raise ValueError('Title too long: shorten it; fixed font size is not reduced')
+    font,stroke,lines,boxes,height,fits=layout(size)
+    if not fits or height>600:
+        raise ValueError('Title too long: shorten it; fixed font size is not reduced')
     title=Image.new('RGBA',(1080,1920))
     draw=ImageDraw.Draw(title)
     y=270
     if style=='snapchat':
         draw.rectangle((0,y-36,1079,y+height+36),fill=(70,70,70,170))
-    mask=Image.new('L',title.size)
-    ink=ImageDraw.Draw(mask)
     for line,box in zip(lines,boxes):
         left,top,right,bottom=box
         width,h=right-left,bottom-top
         x=(1080-width)//2
         if style=='max_readable':
             draw.rounded_rectangle((x-14,y-9,x+width+14,y+h+9),radius=9,fill='white')
-        if style=='blurred_key_quali':
-            font.draw(ink,(x-left,y-top),line,stroke)
-        else:
-            draw.text((x-left,y-top),line,font=font,fill='white' if style=='snapchat' else 'black')
+        draw.text((x-left,y-top),line,font=font,fill='white' if style=='snapchat' else 'black')
         y+=h+16
-    if style=='blurred_key_quali':
-        shadow=Image.new('L',title.size)
-        shadow.paste(mask,(2,5))
-        shadow=shadow.filter(ImageFilter.MaxFilter(2*math.ceil(size*.035)+1))
-        shadow=shadow.filter(ImageFilter.GaussianBlur(size*.10)).point(lambda x:round(x*.75))
-        dark=Image.new('RGBA',title.size,(0,0,0,0));dark.putalpha(shadow)
-        light=Image.new('RGBA',title.size,(255,255,255,0))
-        light.putalpha(mask.filter(ImageFilter.GaussianBlur(size*.025)))
-        title=Image.alpha_composite(dark,light)
     title.save(work/'title.png')
     save(work/'title-layout.json',dict(style=style,font_size=size,lines=lines,
-         ink_height=height,top=270,max_width=900,blur_radius=size*.025 if style=='blurred_key_quali' else 0))
+         ink_height=height,top=270,max_width=900))
 
 
 
