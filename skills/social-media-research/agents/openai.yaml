@@ -1,5 +1,0 @@
-interface:
-  display_name: "Fitness Trend Research"
-  short_description: "Find viral fitness trends, formats and hooks"
-  brand_color: "#5575E7"
-  default_prompt: "Use $social-media-research to ask what I want to scan, then research current fitness trends, formats, challenges, and verified viral hooks from Europe, the United States, and Canada."

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Long Form Video Editing"
+  short_description: "YouTube-Videos planen, schneiden und prüfen"
+  default_prompt: "Nutze $long-form-video-editing: Hilf mir, dieses YouTube-Video zu schneiden."
+
+policy:
+  allow_implicit_invocation: true

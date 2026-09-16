@@ -1,0 +1,7 @@
+interface:
+  display_name: "Short Form Ideas by Ferdi Storytelling"
+  short_description: "Short-Form-Storys und starke YouTube-Challenges"
+  default_prompt: "Nutze $short-form-ideas-by-ferdi-storytelling: Ich brauche Hilfe beim Storytelling für ein neues Short-Form-Video."
+
+policy:
+  allow_implicit_invocation: true

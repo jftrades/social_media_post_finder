@@ -34,7 +34,10 @@ Thumbs.db
 *.db
 
 # Video editor: local libraries and heavyweight dependencies
-agent_tooling/B_Roll/
+agent_tooling/short_form_b_roll/*
+!agent_tooling/short_form_b_roll/.gitkeep
+agent_tooling/long_form_b_roll/*
+!agent_tooling/long_form_b_roll/.gitkeep
 agent_tooling/Purfview-Faster-Whisper-XXL/
 agent_tooling/RobustVideoMatting/
 
@@ -44,8 +47,29 @@ agent_tooling/RobustVideoMatting/
 !agent_tooling/sound_fx/
 !agent_tooling/sound_fx/**
 
-# Generated work
-/project_videos/
+# Generated work. Keep only the empty Short-/Long-Form directory structure in Git.
+project_videos/*
+!project_videos/short_form_unfinished_projects/
+!project_videos/short_form_work/
+!project_videos/short_form_finished_projects/
+!project_videos/long_form_reference/
+!project_videos/long_form_unfinished_projects/
+!project_videos/long_form_work/
+!project_videos/long_form_finished_projects/
+project_videos/short_form_unfinished_projects/*
+project_videos/short_form_work/*
+project_videos/short_form_finished_projects/*
+project_videos/long_form_reference/*
+project_videos/long_form_unfinished_projects/*
+project_videos/long_form_work/*
+project_videos/long_form_finished_projects/*
+!project_videos/short_form_unfinished_projects/.gitkeep
+!project_videos/short_form_work/.gitkeep
+!project_videos/short_form_finished_projects/.gitkeep
+!project_videos/long_form_reference/.gitkeep
+!project_videos/long_form_unfinished_projects/.gitkeep
+!project_videos/long_form_work/.gitkeep
+!project_videos/long_form_finished_projects/.gitkeep
 output/
 tmp/
 .tmp/

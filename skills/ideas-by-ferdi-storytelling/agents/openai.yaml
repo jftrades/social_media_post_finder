@@ -1,7 +1,0 @@
-interface:
-  display_name: "Ideas by Ferdi Storytelling"
-  short_description: "Ehrliche Short-Form-Storys aus deinem Alltag"
-  default_prompt: "Nutze $ideas-by-ferdi-storytelling: Ich brauche Hilfe beim Storytelling für ein neues Video."
-
-policy:
-  allow_implicit_invocation: true
