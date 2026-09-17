@@ -1,46 +1,74 @@
 ---
 name: long-form-video-editing
-description: Plan, edit, review, and finish longer YouTube videos for Ideas by Ferdi without inheriting short-form pacing, vertical defaults, or project folders.
+description: Analyze local reference edits and one-shot longer Ideas by Ferdi YouTube videos into a clean cut, an animated/SFX cut, a fully scored final MP4, and a thumbnail. Use for long-form editing, not Shorts/Reels or creator imitation.
 ---
 
 # Long Form Video Editing
 
-Edit longer YouTube videos around a clear viewer promise, an understandable progression, and an earned payoff. Keep the edit honest to the available footage and Ferdi's actual experience.
+Create a truthful, entertaining YouTube edit from Ferdi's local footage. Learn reusable mechanisms from the local reference analyses, then adapt them to this video's real story rather than copying a creator's exact sequence, jokes, branding, or premise.
 
-## Workspace separation
+## Load only the needed context
 
-- Put incoming projects in `project_videos/long_form_unfinished_projects/<project>/`.
-- Use `project_videos/long_form_work/<project>/` for inventories, transcripts, proxies, edit plans, review exports, and render intermediates.
-- Deliver approved projects to `project_videos/long_form_finished_projects/<project>/`.
-- Use `project_videos/long_form_reference/` only as reference material; never treat it as footage licensed for the final edit without confirmation.
-- Use shared long-form library footage only from `agent_tooling/long_form_b_roll/`.
-- Shared fonts, LUTs, music, sound effects, transcription tooling, and masking tooling may be reused when they fit the project.
+1. Read [references/intake.md](references/intake.md) and complete its three levels strictly in order. Ask only missing questions and wait after each level.
+2. Read [references/reference-analysis.md](references/reference-analysis.md). Inspect `project_videos/long_form_reference/STYLE_INDEX.md` and the `analysis.md` for every reference Ferdi names. If he names none, select the best one or two by story type and say which mechanisms will guide the edit.
+3. Read [references/style-system.md](references/style-system.md) before planning text, color, sound, music, or thumbnail.
+4. Read [references/workflow.md](references/workflow.md) before creating the job, rendering, or finishing.
 
-Do not read from or write to the `short_form_*` project folders or `agent_tooling/short_form_b_roll/` unless Ferdi explicitly asks to reuse a named asset. Do not apply the short-form renderer, 9:16 output, caption style, cut frequency, zoom rules, or music defaults automatically.
+Do not start transcription, edit planning, or rendering until Levels 1–3 are confirmed. After Level 3, work one-shot through all outputs unless files are missing, instructions conflict, or a render failure requires a choice.
 
-## Intake
+## Workspace contract
 
-Before editing, establish only the missing facts:
+- Inputs: `project_videos/long_form_unfinished_projects/<project>/`
+- Intermediates: `project_videos/long_form_work/<project>/`
+- Deliverables: `project_videos/long_form_finished_projects/<project>/`
+- Reference MP4s and analysis packs: `project_videos/long_form_reference/`
+- Shared long-form B-roll: `agent_tooling/long_form_b_roll/`
+- Shared music, SFX, fonts, LUTs, transcription, FFmpeg, and Remotion: `agent_tooling/` plus this skill's `remotion/` runtime
 
-1. The video's working title, central promise, and target viewer.
-2. The available footage, audio, script, outline, and any named reference videos.
-3. The desired duration, aspect ratio, resolution, frame rate, and delivery format.
-4. The intended structure, must-keep moments, sensitive material, and sections that may be removed.
-5. Preferences for pacing, B-roll, music, sound design, graphics, subtitles, and color.
-6. The review process and definition of finished.
+Never use a Short-Form project folder or Short-Form B-roll unless Ferdi explicitly names an asset. Never delete long-form originals automatically. Never overwrite a non-empty finished project.
 
-Do not begin destructive cleanup or a final render while a choice that materially changes the edit is unresolved.
+## Story and tension plan
 
-## Editing workflow
+Before cutting, make a timestamped tension curve in the work folder. It must identify the cold open, promise, setup, first obstacle, progress, setback or uncertainty, escalation, decisive attempt, payoff, and brief reflection when those beats exist. For every section specify:
 
-1. Inventory the media and record duration, resolution, frame rate, audio channels, and obvious technical issues.
-2. Create a project-specific edit brief and source manifest in the long-form work folder.
-3. Build the structure around the opening promise, meaningful developments, re-hooks, and payoff. Preserve strong real moments over artificial intensity.
-4. Produce a rough cut before detailed captions, graphics, sound design, or color work unless the user requests a different order.
-5. Keep B-roll and reference usage traceable to their source and allowed purpose.
-6. Review the complete export for story continuity, sync, missing media, black frames, accidental repeats, text legibility, audio balance, color consistency, and export settings.
-7. Move or copy final assets only after approval. Never delete long-form originals unless Ferdi explicitly requests cleanup and the delivered copies have been verified.
+- the viewer's current question and what changes their prediction;
+- cut density and intentional breathing room;
+- talking head, live audio, voice-over, training montage, or explanatory B-roll;
+- planned zooms, text, graphics, transitions, SFX, and music function;
+- the visible proof that earns the next beat.
 
-## Current boundary
+Do not force every video into the same arc. Use the reference analyses to distinguish diary/progression, challenge, update, relationship, and investigation structures.
 
-This is the initial long-form workflow contract. It does not yet define a dedicated renderer or fixed YouTube style. Extend it from real projects rather than copying Short-Form implementation details.
+## Required outputs
+
+Every successful one-shot edit produces:
+
+1. `01_cut.mp4`: approved story/dialogue cut only; no SFX, zooms, motion graphics, or music. Apply the approved camera LUT chain because it is the common color base for all three versions.
+2. `02_animated.mp4`: the same cut plus SFX, purposeful zooms, Remotion text/graphics, and transitions; no music.
+3. `03_final.mp4`: the animated version plus multiple music cues chosen against the tension curve, with fades and dialogue-safe mixing.
+4. `thumbnail.jpg`: 1280×720, derived from the actual project footage and the same click promise.
+5. `edit-report.md`, `job.json`, `remotion-props.json`, and `qa.json` so every decision is inspectable.
+
+The three MP4s must share the same underlying story cut. Later stages add layers; they must not silently change the narrative edit.
+
+## Style invariants
+
+- Default text font: Alte Haas Grotesk Bold with a blurred shadow.
+- Handwritten note, thought, label, or annotation: Child Hood.
+- One- or two-word impact heading: Race Day.
+- Ask whether all inputs are camera footage. When LUTs are approved, treat files as camera by default and exclude only the files Ferdi names as non-camera or already graded.
+- Camera order: `CINELIKE D to REC 709_26.P1003055.cube` at 80%, then `MERRY_MEN_II.cube` at 30%.
+- Use more than one music track when the story changes emotional function. Never loop one song across the whole video merely for convenience.
+- Use zooms and effects only when they sharpen a reaction, reveal, joke, proof, or escalation. Do not import Short-Form frequency as a default.
+
+## One-shot completion gate
+
+Finish only after:
+
+- every output decodes without errors and contains expected audio/video streams;
+- full-length playback inspection confirms sync, pacing, no black gaps, no missing media, no accidental repeated clips, and no clipped words;
+- text uses the intended font role, remains readable, and does not cover the important action;
+- LUT exclusions and reference-derived choices match the confirmed intake;
+- dialogue remains intelligible through all SFX and music changes;
+- the thumbnail promise matches the actual payoff;
+- final copies and hashes are verified while all inputs remain intact.

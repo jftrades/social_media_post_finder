@@ -1,0 +1,91 @@
+{
+  "project": "mein-youtube-video",
+  "intake": {
+    "level1": {
+      "confirmed": true,
+      "working_title": "Kann ich das wirklich schaffen?",
+      "promise": "Ein sichtbarer Test mit ehrlichem Ergebnis",
+      "target_duration_minutes": 12,
+      "primary_reference": "Training my Little Sister for Her First IRONMAN"
+    },
+    "level2": {
+      "confirmed": true,
+      "all_files_are_camera": true,
+      "non_camera_files": [],
+      "apply_camera_luts": true,
+      "music_and_sfx_library_allowed": true
+    },
+    "level3": {
+      "confirmed": true,
+      "one_shot": true,
+      "library_b_roll_allowed": false
+    }
+  },
+  "output": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30
+  },
+  "segments": [
+    {
+      "source": "intro.mp4",
+      "start": 1.2,
+      "end": 8.7,
+      "speed": 1,
+      "camera": true
+    }
+  ],
+  "zooms": [
+    {
+      "startFrame": 60,
+      "endFrame": 90,
+      "scale": 1.12,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "overlays": [
+    {
+      "startFrame": 105,
+      "durationFrames": 60,
+      "text": "TAG 1",
+      "kind": "race",
+      "x": 960,
+      "y": 260
+    },
+    {
+      "startFrame": 180,
+      "durationFrames": 90,
+      "text": "das war nicht der Plan",
+      "kind": "note",
+      "x": 1420,
+      "y": 700,
+      "rotation": -4
+    }
+  ],
+  "sound_effects": [
+    {
+      "path": "agent_tooling/sound_fx/whoosh-swift-cut-jam-fx-1-00-00.mp3",
+      "startFrame": 105,
+      "volume": 0.5,
+      "match": "Impact heading appears"
+    }
+  ],
+  "music": [
+    {
+      "path": "agent_tooling/background_music/warm relaxed groove.mp3",
+      "startFrame": 0,
+      "endFrame": 900,
+      "volume": 0.08,
+      "fadeInFrames": 30,
+      "fadeOutFrames": 45,
+      "function": "Light setup"
+    }
+  ],
+  "thumbnail": {
+    "source": "intro.mp4",
+    "time": 3.5,
+    "title": "KANN ICH DAS\nWIRKLICH?",
+    "accent": "TAG 1"
+  }
+}

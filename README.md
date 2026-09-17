@@ -13,6 +13,14 @@ Lokales Skill-Repository für Research, Storytelling und künftig automatisierte
 | [Short Form Voice-over](skills/short-form-video-editing/ideas-by-ferdi-voiceover/SKILL.md) | Vorhandenes Voice-over mit B-Roll. |
 | [Long Form Video Editing](skills/long-form-video-editing/SKILL.md) | Startpunkt für Planung, Schnitt und QA längerer YouTube-Videos. |
 
+## Long-Form-VideoEditor
+
+Der Long-Form-Skill nutzt eine hybride lokale Pipeline: FFmpeg übernimmt Story-Cut, Audio-Kontinuität und die bestätigte LUT-Kette; Remotion rendert gezielte Zooms, Texte, Grafiken, SFX, mehrere Musikabschnitte und das Thumbnail. Ein Auftrag erzeugt `01_cut.mp4`, `02_animated.mp4`, `03_final.mp4` und `thumbnail.jpg`. Alle drei Videos teilen denselben Story-Cut; die späteren Versionen ergänzen nur Ebenen.
+
+Vor dem Schnitt läuft ein dreistufiger Intake: Video/Versprechen, Look/Audio und konkrete Dateirollen/Ausnahmen. Anschließend arbeitet der Skill ohne Zwischenfreigaben bis zu allen drei Fassungen. Die analysierten Referenzen liegen in `project_videos/long_form_reference/STYLE_INDEX.md`; pro Referenz gibt es einen exakt benannten `Folder-…/Assets-…/`-Pack mit Timeline, Transkript, Bildern und übertragbaren Regeln.
+
+Kamera-Material erhält bei Bestätigung zuerst `CINELIKE D to REC 709` mit 80 %, danach `MERRY_MEN II` mit 30 %. Alte Haas Grotesk Bold mit weichgezeichnetem Schatten ist der Standard, Child Hood markiert Notizen, Race Day setzt einzelne ein- bis zweiwortige Impact-Titel. Musik wird entlang der Spannungsanalyse gewechselt und unter Dialog abgesenkt.
+
 ## Short-Form-VideoEditor-PoC
 
 Der minimale lokale Workflow deckt drei Fälle ab:

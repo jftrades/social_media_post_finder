@@ -59,7 +59,9 @@ project_videos/*
 project_videos/short_form_unfinished_projects/*
 project_videos/short_form_work/*
 project_videos/short_form_finished_projects/*
-project_videos/long_form_reference/*
+# Keep local reference videos out of Git, but version their lightweight analysis packs.
+project_videos/long_form_reference/*.mp4
+project_videos/long_form_reference/**/*.mp4
 project_videos/long_form_unfinished_projects/*
 project_videos/long_form_work/*
 project_videos/long_form_finished_projects/*
