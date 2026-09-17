@@ -8,6 +8,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -51,6 +52,21 @@ def run(args: list[str | Path], cwd: Path | None = None) -> str:
     if proc.returncode:
         raise RuntimeError((proc.stderr or proc.stdout)[-12000:])
     return proc.stdout + proc.stderr
+
+
+def probe_duration(path: Path) -> float:
+    proc = subprocess.run(
+        [str(FFMPEG), "-hide_banner", "-i", str(path)],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    match = re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", proc.stderr)
+    if not match:
+        raise ValueError(f"Could not read media duration: {path}")
+    hours, minutes, seconds = match.groups()
+    return int(hours) * 3600 + int(minutes) * 60 + float(seconds)
 
 
 def resolved_inside(path: Path, parent: Path) -> Path:
@@ -178,11 +194,14 @@ def render_base(job: dict, job_path: Path) -> Path:
             f"aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo[a{index}]"
         )
         concat_inputs.append(f"[{video_label}][a{index}]")
-    filters.append("".join(concat_inputs) + f"concat=n={len(sources)}:v=1:a=1[vout][aout]")
+    filters.append("".join(concat_inputs) + f"concat=n={len(sources)}:v=1:a=1[vout][ajoin]")
+    filters.append("[ajoin]loudnorm=I=-16:TP=-2:LRA=11[aout]")
 
     output = work / "01_cut.mp4"
+    filter_script = work / "base-filter-complex.txt"
+    filter_script.write_text(";".join(filters), encoding="utf-8")
     command += [
-        "-filter_complex", ";".join(filters),
+        "-filter_complex_script", filter_script,
         "-map", "[vout]", "-map", "[aout]",
         "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "256k", "-movflags", "+faststart", output,
@@ -233,7 +252,7 @@ def stage_remotion(job: dict, cut: Path) -> Path:
     else:
         run([FFMPEG, "-hide_banner", "-y", "-ss", str(thumbnail.get("time", 0)), "-i", cut, "-frames:v", "1", "-q:v", "2", thumb_source])
 
-    duration_seconds = sum((float(item["end"]) - float(item["start"])) / float(item.get("speed", 1)) for item in job["segments"])
+    duration_seconds = probe_duration(cut)
     fps = int(job["output"]["fps"])
     props = {
         "baseVideo": "runtime/media/base.mp4",
@@ -245,6 +264,9 @@ def stage_remotion(job: dict, cut: Path) -> Path:
         "zooms": job.get("zooms", []),
         "soundEffects": [],
         "music": [],
+        "counters": job.get("counters", []),
+        "imageOverlays": [],
+        "videoOverlays": [],
         "thumbnailSource": "runtime/media/thumbnail-source.jpg",
         "thumbnailTitle": thumbnail.get("title", job["intake"]["level1"].get("working_title", job["project"])),
         "thumbnailAccent": thumbnail.get("accent", ""),
@@ -258,6 +280,24 @@ def stage_remotion(job: dict, cut: Path) -> Path:
             runtime_item.pop("path")
             runtime_item["src"] = copy_runtime_asset(asset, "audio")
             destination.append(runtime_item)
+    for item in job.get("image_overlays", []):
+        asset = Path(item["path"])
+        if not asset.is_absolute():
+            asset = project_paths(job)[0] / asset
+        asset = resolved_inside(asset, project_paths(job)[0])
+        runtime_item = dict(item)
+        runtime_item.pop("path")
+        runtime_item["src"] = copy_runtime_asset(asset, "images")
+        props["imageOverlays"].append(runtime_item)
+    for item in job.get("video_overlays", []):
+        asset = Path(item["path"])
+        if not asset.is_absolute():
+            asset = project_paths(job)[0] / asset
+        asset = resolved_inside(asset, project_paths(job)[0])
+        runtime_item = dict(item)
+        runtime_item.pop("path")
+        runtime_item["src"] = copy_runtime_asset(asset, "video")
+        props["videoOverlays"].append(runtime_item)
     props_path = work / "remotion-props.json"
     save_json(props_path, props)
     return props_path
@@ -266,11 +306,60 @@ def stage_remotion(job: dict, cut: Path) -> Path:
 def render_remotion(job: dict, props_path: Path) -> None:
     _, work, _ = project_paths(job)
     run([NPM, "run", "render", "--", "--props", props_path, "--output-dir", work], cwd=REMOTION)
+    render_final_music(job)
+
+
+def render_final_music(job: dict) -> Path:
+    _, work, _ = project_paths(job)
+    animated = work / "02_animated.mp4"
+    final = work / "03_final.mp4"
+    music = job.get("music", [])
+    if not music:
+        shutil.copy2(animated, final)
+        return final
+
+    fps = int(job["output"]["fps"])
+    total_frames = round(sum((float(item["end"]) - float(item["start"])) / float(item.get("speed", 1)) for item in job["segments"]) * fps)
+    command: list[str | Path] = [FFMPEG, "-hide_banner", "-y", "-i", animated]
+    filters = []
+    labels = ["[0:a]"]
+    for index, item in enumerate(music, start=1):
+        asset = Path(item["path"])
+        if not asset.is_absolute():
+            asset = ROOT / asset
+        if not asset.exists():
+            raise ValueError(f"Missing music asset: {asset}")
+        command += ["-stream_loop", "-1", "-i", asset]
+        start_frame = int(item.get("startFrame", 0))
+        end_frame = int(item.get("endFrame", total_frames))
+        duration = max(0.04, (end_frame - start_frame) / fps)
+        start_seconds = start_frame / fps
+        volume = float(item.get("volume", 1))
+        chain = f"[{index}:a]atrim=duration={duration:.6f},asetpts=PTS-STARTPTS"
+        fade_in = int(item.get("fadeInFrames", 0)) / fps
+        fade_out = int(item.get("fadeOutFrames", 0)) / fps
+        if fade_in > 0:
+            chain += f",afade=t=in:st=0:d={fade_in:.6f}"
+        if fade_out > 0:
+            chain += f",afade=t=out:st={max(0, duration-fade_out):.6f}:d={fade_out:.6f}"
+        chain += f",volume={volume:.6f},adelay={round(start_seconds * 1000)}:all=1[m{index}]"
+        filters.append(chain)
+        labels.append(f"[m{index}]")
+    filters.append("".join(labels) + f"amix=inputs={len(labels)}:duration=first:normalize=0[aout]")
+    mix_script = work / "music-filter-complex.txt"
+    mix_script.write_text(";".join(filters), encoding="utf-8")
+    command += [
+        "-filter_complex_script", mix_script,
+        "-map", "0:v:0", "-map", "[aout]", "-c:v", "copy",
+        "-c:a", "aac", "-b:a", "256k", "-movflags", "+faststart", final,
+    ]
+    run(command, cwd=ROOT)
+    return final
 
 
 def qa(job: dict) -> dict:
     _, work, _ = project_paths(job)
-    expected = sum((float(item["end"]) - float(item["start"])) / float(item.get("speed", 1)) for item in job["segments"])
+    expected = probe_duration(work / "01_cut.mp4")
     report = {"expected_duration_seconds": expected, "outputs": []}
     for filename in ("01_cut.mp4", "02_animated.mp4", "03_final.mp4"):
         path = work / filename

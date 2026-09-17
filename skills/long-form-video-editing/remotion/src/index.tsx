@@ -44,6 +44,33 @@ type TimedAudio = {
   fadeOutFrames?: number;
 };
 
+type CounterOverlay = {
+  startFrame: number;
+  durationFrames: number;
+  label: string;
+  target?: string | number;
+  repFrames: number[];
+  suffix?: string;
+};
+
+type ImageOverlay = {
+  startFrame: number;
+  durationFrames: number;
+  src: string;
+  mode?: 'full' | 'card';
+  x?: number;
+  y?: number;
+  width?: number;
+};
+
+type VideoOverlay = {
+  startFrame: number;
+  durationFrames: number;
+  src: string;
+  sourceStartFrame?: number;
+  fit?: 'cover' | 'contain';
+};
+
 export type LongFormProps = {
   baseVideo: string;
   durationInFrames: number;
@@ -54,6 +81,9 @@ export type LongFormProps = {
   zooms: Zoom[];
   soundEffects: TimedAudio[];
   music: TimedAudio[];
+  counters: CounterOverlay[];
+  imageOverlays: ImageOverlay[];
+  videoOverlays: VideoOverlay[];
   thumbnailSource: string;
   thumbnailTitle: string;
   thumbnailAccent?: string;
@@ -69,6 +99,9 @@ const defaults: LongFormProps = {
   zooms: [],
   soundEffects: [],
   music: [],
+  counters: [],
+  imageOverlays: [],
+  videoOverlays: [],
   thumbnailSource: 'runtime/media/thumbnail-source.jpg',
   thumbnailTitle: 'LONG FORM',
   thumbnailAccent: 'VIDEO',
@@ -133,6 +166,35 @@ const TextOverlay: React.FC<{item: Overlay}> = ({item}) => {
   );
 };
 
+const Counter: React.FC<{item: CounterOverlay}> = ({item}) => {
+  const frame = useCurrentFrame();
+  const {fps} = useVideoConfig();
+  const count = item.repFrames.filter((value) => value <= frame).length;
+  const last = [...item.repFrames].reverse().find((value) => value <= frame) ?? -1000;
+  const bump = spring({frame: frame - last, fps, config: {damping: 10, stiffness: 220, mass: 0.45}});
+  return (
+    <div style={{position: 'absolute', left: 42, top: 38, minWidth: 285, padding: '17px 22px 15px', borderRadius: 18, background: 'rgba(8,8,8,.76)', border: '1px solid rgba(255,255,255,.18)', boxShadow: '0 10px 30px rgba(0,0,0,.35)', color: 'white', fontFamily: 'Alte Haas', textShadow: '0 5px 15px rgba(0,0,0,.75)'}}>
+      <div style={{fontSize: 29, letterSpacing: -0.6}}>{item.label}{item.target === undefined ? '' : ` · Ziel: ${item.target}`}</div>
+      <div style={{fontSize: 66, lineHeight: 0.95, marginTop: 8, transform: `scale(${1 + bump * 0.08})`, transformOrigin: 'left center'}}>{count}{item.suffix ?? ''}</div>
+    </div>
+  );
+};
+
+const Picture: React.FC<{item: ImageOverlay}> = ({item}) => {
+  const frame = useCurrentFrame();
+  const {fps} = useVideoConfig();
+  const intro = spring({frame, fps, config: {damping: 15, stiffness: 160, mass: 0.65}});
+  if ((item.mode ?? 'full') === 'full') {
+    return (
+      <AbsoluteFill style={{backgroundColor: '#080808', opacity: intro}}>
+        <Img src={staticFile(item.src)} style={{position: 'absolute', inset: -30, width: 'calc(100% + 60px)', height: 'calc(100% + 60px)', objectFit: 'cover', filter: 'blur(28px) brightness(.28)', transform: 'scale(1.08)'}} />
+        <Img src={staticFile(item.src)} style={{width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 14px 32px rgba(0,0,0,.65))', transform: `scale(${0.96 + intro * 0.04})`}} />
+      </AbsoluteFill>
+    );
+  }
+  return <Img src={staticFile(item.src)} style={{position: 'absolute', left: item.x ?? 1220, top: item.y ?? 90, width: item.width ?? 620, maxHeight: 850, objectFit: 'contain', borderRadius: 22, boxShadow: '0 16px 46px rgba(0,0,0,.55)', transform: `scale(${0.9 + intro * 0.1})`, transformOrigin: 'top left'}} />;
+};
+
 const LongFormVideo: React.FC<{props: LongFormProps; withMusic: boolean}> = ({props, withMusic}) => {
   const frame = useCurrentFrame();
   const activeZoom = props.zooms.find((zoom) => frame >= zoom.startFrame && frame <= zoom.endFrame);
@@ -157,9 +219,24 @@ const LongFormVideo: React.FC<{props: LongFormProps; withMusic: boolean}> = ({pr
       <AbsoluteFill style={{transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`}}>
         <OffthreadVideo src={staticFile(props.baseVideo)} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
       </AbsoluteFill>
+      {props.videoOverlays.map((item, index) => (
+        <Sequence key={`video-${item.src}-${index}`} from={item.startFrame} durationInFrames={item.durationFrames}>
+          <OffthreadVideo muted startFrom={item.sourceStartFrame ?? 0} src={staticFile(item.src)} style={{width: '100%', height: '100%', objectFit: item.fit ?? 'cover'}} />
+        </Sequence>
+      ))}
       {props.overlays.map((item, index) => (
         <Sequence key={`${item.text}-${index}`} from={item.startFrame} durationInFrames={item.durationFrames}>
           <TextOverlay item={item} />
+        </Sequence>
+      ))}
+      {props.counters.map((item, index) => (
+        <Sequence key={`counter-${item.label}-${index}`} from={item.startFrame} durationInFrames={item.durationFrames}>
+          <Counter item={item} />
+        </Sequence>
+      ))}
+      {props.imageOverlays.map((item, index) => (
+        <Sequence key={`image-${item.src}-${index}`} from={item.startFrame} durationInFrames={item.durationFrames}>
+          <Picture item={item} />
         </Sequence>
       ))}
       {props.soundEffects.map((item, index) => <AudioLayer key={`sfx-${index}`} item={item} index={index} />)}

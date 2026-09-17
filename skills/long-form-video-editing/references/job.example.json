@@ -63,6 +63,32 @@
       "rotation": -4
     }
   ],
+  "counters": [
+    {
+      "startFrame": 240,
+      "durationFrames": 150,
+      "label": "Klimmzüge",
+      "target": 9,
+      "repFrames": [18, 36, 54, 72, 90, 108, 126, 144]
+    }
+  ],
+  "image_overlays": [
+    {
+      "path": "training-stats.jpeg",
+      "startFrame": 720,
+      "durationFrames": 120,
+      "mode": "full"
+    }
+  ],
+  "video_overlays": [
+    {
+      "path": "gym-broll.mp4",
+      "startFrame": 420,
+      "durationFrames": 150,
+      "sourceStartFrame": 75,
+      "fit": "cover"
+    }
+  ],
   "sound_effects": [
     {
       "path": "agent_tooling/sound_fx/whoosh-swift-cut-jam-fx-1-00-00.mp3",

@@ -3,7 +3,7 @@ import path from 'node:path';
 import process from 'node:process';
 import {fileURLToPath} from 'node:url';
 import {bundle} from '@remotion/bundler';
-import {renderMedia, renderStill, selectComposition} from '@remotion/renderer';
+import {renderStill, selectComposition} from '@remotion/renderer';
 
 const args = process.argv.slice(2);
 const get = (name) => {
@@ -13,39 +13,19 @@ const get = (name) => {
 };
 
 const propsPath = path.resolve(get('--props'));
-const outputDir = path.resolve(get('--output-dir'));
+const output = path.resolve(get('--output'));
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const inputProps = JSON.parse(fs.readFileSync(propsPath, 'utf8'));
-fs.mkdirSync(outputDir, {recursive: true});
-
 const serveUrl = await bundle({
   entryPoint: path.join(root, 'src', 'index.tsx'),
   publicDir: path.join(root, 'public'),
   webpackOverride: (config) => config,
 });
-
-for (const [id, filename] of [['LongFormAnimated', '02_animated.mp4']]) {
-  const composition = await selectComposition({serveUrl, id, inputProps});
-  await renderMedia({
-    composition,
-    serveUrl,
-    codec: 'h264',
-    audioCodec: 'aac',
-    audioBitrate: '256K',
-    crf: 18,
-    pixelFormat: 'yuv420p',
-    outputLocation: path.join(outputDir, filename),
-    inputProps,
-    overwrite: true,
-    concurrency: '15%',
-  });
-}
-
 const thumbnail = await selectComposition({serveUrl, id: 'Thumbnail', inputProps});
 await renderStill({
   composition: thumbnail,
   serveUrl,
-  output: path.join(outputDir, 'thumbnail.jpg'),
+  output,
   inputProps,
   imageFormat: 'jpeg',
   jpegQuality: 95,

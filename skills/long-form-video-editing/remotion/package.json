@@ -6,6 +6,7 @@
   "scripts": {
     "studio": "remotion studio src/index.tsx",
     "render": "node scripts/render.mjs",
+    "render-thumbnail": "node scripts/render-thumbnail.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

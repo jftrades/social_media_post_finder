@@ -23,7 +23,7 @@ The renderer:
 - uses FFmpeg for trims, order, speed, format normalization, audio continuity, and the two mixed LUT passes;
 - renders `01_cut.mp4` without SFX, animation, zooms, or music, while retaining the approved camera LUT chain as the common color base;
 - stages the cut and local assets for Remotion;
-- renders `02_animated.mp4`, `03_final.mp4`, and `thumbnail.jpg` through Remotion;
+- renders `02_animated.mp4` and `thumbnail.jpg` through Remotion, then creates `03_final.mp4` by mixing the planned music cues onto the same encoded animation track so the picture stays frame-identical;
 - limits Remotion concurrency to 25% for a weaker laptop;
 - decodes every MP4 as a QA smoke test and refuses to overwrite a non-empty finished project.
 
