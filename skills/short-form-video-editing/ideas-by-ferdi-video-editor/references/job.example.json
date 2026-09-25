@@ -30,7 +30,7 @@
   "voiceover_broll_policy": "none",
   "flash_shutter_intro_enabled": false,
   "flash_shutter_intro_clips": [],
-  "visual_cut_policy": "one_second_montage_over_5s",
+  "visual_cut_policy": "story_matched",
   "drops": [],
   "visuals": [],
   "qa_approved": false

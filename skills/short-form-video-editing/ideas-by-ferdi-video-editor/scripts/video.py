@@ -76,8 +76,8 @@ def gate(job):
     if mode == 'voiceover':
         if len(job.get('sources',[])) != 1:
             raise ValueError('Voice-over requires exactly one narration source.')
-        if job.get('visual_cut_policy') != 'one_second_montage_over_5s' or job['intake']['visual_timing'] != job['visual_cut_policy']:
-            raise ValueError('Voice-over must use the confirmed one-second montage policy for clips over five seconds.')
+        if job.get('visual_cut_policy') not in ('story_matched','one_second_montage_over_5s') or job['intake']['visual_timing'] != job['visual_cut_policy']:
+            raise ValueError('Voice-over requires a matching visual policy; new jobs use story_matched.')
         policy=job.get('voiceover_broll_policy')
         if policy not in ('none','explicit','if_insufficient','explicit_or_insufficient') or job['intake']['broll_fallback'] != policy:
             raise ValueError('Confirm when extra B-roll may be used.')
@@ -600,6 +600,7 @@ def voiceover_visual_gate(job):
     if len(job.get('visuals',[])) < 2:
         raise ValueError('Voice-over requires multiple visual clips or snippets.')
     groups={}
+    story_matched=job.get('visual_cut_policy')=='story_matched'
     insert_paths={str(media(x['path'])) for x in job.get('voiceover_inserts',[])}
     for visual in job.get('visuals',[]):
         path=media(visual['path'])
@@ -617,11 +618,22 @@ def voiceover_visual_gate(job):
             if visual.get('speed',1) != 1 or length > 6.01 or not visual.get('match'):
                 raise ValueError('An approved continuous key interval must stay at original speed, be at most six seconds and document its match.')
             continue
+        if story_matched:
+            if not str(visual.get('match','')).strip():
+                raise ValueError('Story-matched visuals must document their spoken statement and final time range.')
+            if visual.get('speed',1) != 1:
+                raise ValueError('Story-matched visuals stay at original speed unless explicitly marked as a full-clip retime.')
+            groups.setdefault(str(path),[]).append((visual['start'],visual['end']))
+            continue
         if source_duration > 5.001:
             if not .78 <= length <= 1.02:
                 raise ValueError('Voice-over clips over five seconds require compact snippets of about 0.8 to 1.0 seconds.')
             groups.setdefault(str(path),[]).append((visual['start'],visual['end']))
     for intervals in groups.values():
+        if story_matched:
+            if any(a[1] > b[0]+.001 for a,b in zip(intervals,intervals[1:])):
+                raise ValueError('Story-matched snippets of a source must be chronological and non-overlapping.')
+            continue
         ordered=sorted(intervals)
         if not 2 <= len(ordered) <= 5 or any(a[1] > b[0]+.001 for a,b in zip(ordered,ordered[1:])):
             raise ValueError('Each long voice-over clip needs two to five distinct, non-overlapping snippets.')

@@ -55,6 +55,9 @@ class Intake(unittest.TestCase):
                              retiming='keine',broll_fallback='none',flash_shutter_intro='nein')
         v.gate(job)
         with self.assertRaises(ValueError):v.gate({**job,'sources':['a.wav','b.wav']})
+        story=copy.deepcopy(job);story['visual_cut_policy']='story_matched'
+        story['intake']['visual_timing']='story_matched';v.gate(story)
+        with self.assertRaises(ValueError):v.gate({**story,'visual_cut_policy':'unknown'})
         with self.assertRaises(ValueError):v.gate({**job,'title_behind_person':True})
         clips=[f'project_videos/short_form_unfinished_projects/test/{i}.mp4' for i in range(7)]
         enabled=copy.deepcopy(job);enabled.update(flash_shutter_intro_enabled=True,flash_shutter_intro_clips=clips)
@@ -68,6 +71,24 @@ class Intake(unittest.TestCase):
         job['intake']['zooms']='ja';v.gate(job)
         events=v.zoom_timeline(job,[dict(source=0,start=0,end=5)])
         self.assertEqual(events[0]['reset'],2.5)
+
+    @patch.object(v,'media',side_effect=lambda path:Path(path))
+    @patch.object(v,'duration',return_value=30)
+    def test_story_match_allows_statement_length_not_fixed_snippet_counts(self,_duration,_media):
+        base=dict(visual_cut_policy='story_matched',voiceover_inserts=[],visuals=[
+            dict(path='ice.mp4',start=0,end=10,speed=1,match='0-10: Eis gegessen und genossen'),
+            dict(path='gym.mp4',start=2,end=5,speed=1,match='10-13: Gym')])
+        v.voiceover_visual_gate(base)
+        snippets=[dict(path='ice.mp4',start=i*2,end=i*2+1.5,speed=1,match='Eis: 0-10.5') for i in range(7)]
+        v.voiceover_visual_gate({**base,'visuals':snippets})
+        for mutate in ('missing_match','overlap','reverse','speed'):
+            bad=copy.deepcopy(base)
+            if mutate=='missing_match':bad['visuals'][0].pop('match')
+            elif mutate=='speed':bad['visuals'][0]['speed']=2
+            else:
+                bad['visuals'][1].update(path='ice.mp4',start=5,end=12)
+                if mutate=='reverse':bad['visuals'].reverse()
+            with self.assertRaises(ValueError):v.voiceover_visual_gate(bad)
 
     @patch.object(v,'media',side_effect=lambda path:Path(path))
     @patch.object(v,'duration',return_value=8)
